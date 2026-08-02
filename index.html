@@ -227,77 +227,68 @@ var DEFAULT=
     ],
     "compareNote": "当地租车多支持异地还车（如海拉尔取、阿尔山还）"
   },
-  "map": {
+    "map": {
+    "title": "7天总路线 · 全程约1800km",
+    "sub": "按真实经纬度绘制（示意路线，非精确比例）",
     "points": {
       "海拉尔": [
-        560,
-        540
+        119.736,
+        49.215
       ],
       "莫日格勒河": [
-        480,
-        500
+        119.779,
+        49.512
       ],
       "额尔古纳": [
-        640,
-        390
+        120.18,
+        50.243
       ],
       "根河": [
-        790,
-        300
+        121.529,
+        50.78
       ],
       "莫尔道嘎": [
-        680,
-        245
+        120.7,
+        51.1
       ],
       "室韦/临江": [
-        560,
-        175
+        119.92,
+        51.4
       ],
       "九卡": [
-        515,
-        235
+        119.8,
+        51.05
       ],
       "七卡": [
-        478,
-        295
+        119.62,
+        50.65
       ],
       "五卡": [
-        452,
-        345
+        119.45,
+        50.35
       ],
       "黑山头": [
-        435,
-        370
+        119.364,
+        50.2
       ],
       "满洲里": [
-        165,
-        460
+        117.381,
+        49.599
       ],
       "阿尔山": [
-        470,
-        800
+        119.95,
+        47.35
       ],
       "驼峰岭天池": [
-        545,
-        755
+        120.05,
+        47.42
       ],
       "杜鹃湖": [
-        410,
-        745
+        119.9,
+        47.28
       ]
     },
-    "title": "7天总路线 · 全程约1800km",
-  "sub": "海拉尔出发 → 阿尔山结束（示意图，非精确比例）",
-  "deco": {
-    "river": { "d": "M575 150 L530 215 L490 280 L460 340 L452 372", "label": "额尔古纳河（中俄界河）", "tx": 462, "ty": 398, "color": "#60a5fa" },
-    "labels": [
-      { "x": 812, "y": 148, "text": "俄", "size": 20 },
-      { "x": 812, "y": 172, "text": "罗", "size": 20 },
-      { "x": 812, "y": 196, "text": "斯", "size": 20 },
-      { "x": 300, "y": 660, "text": "呼伦贝尔草原", "size": 15, "color": "#84cc16", "op": 0.85 }
-    ]
-  },
-  "segments": [
+    "segments": [
       {
         "label": "DAY 1",
         "color": "#2563eb",
@@ -369,7 +360,67 @@ var DEFAULT=
         "km": "公园内游览",
         "dash": "7 6"
       }
-    ]
+    ],
+    "deco": {
+      "river": {
+        "path": [
+          [
+            119.364,
+            50.2
+          ],
+          [
+            119.45,
+            50.4
+          ],
+          [
+            119.62,
+            50.7
+          ],
+          [
+            119.8,
+            51
+          ],
+          [
+            119.9,
+            51.3
+          ],
+          [
+            120.05,
+            51.9
+          ]
+        ],
+        "label": "额尔古纳河（中俄界河）",
+        "color": "#7cb8e8",
+        "lx": 12,
+        "ly": -10
+      },
+      "labels": [
+        {
+          "lon": 121,
+          "lat": 51.6,
+          "text": "俄罗斯",
+          "size": 16,
+          "color": "#9aa0a6",
+          "op": 0.8
+        },
+        {
+          "lon": 118.15,
+          "lat": 49.9,
+          "text": "呼伦贝尔草原",
+          "size": 14,
+          "color": "#7fae63",
+          "op": 0.85
+        },
+        {
+          "lon": 121.25,
+          "lat": 50.35,
+          "text": "大兴安岭",
+          "size": 14,
+          "color": "#7fae63",
+          "op": 0.85
+        }
+      ]
+    }
   },
   "days": [
     {
@@ -729,52 +780,110 @@ function catTag(c){return '<span class="tag t-'+c+'">'+catName(c)+'</span>';}
 function toast(msg){var t=$id('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},1800);}
 
 
-function polySvg(seg,pts,color,w,dash){
+function polySvg(sg,pts,X,Y,color,w,dash){
   var d='';
-  seg.route.forEach(function(n,i){var p=pts[n];d+=(i?'L':'M')+p[0]+' '+p[1]+' ';});
+  sg.route.forEach(function(n,i){var p=pts[n];if(!p)return;d+=(i?'L':'M')+X(p[0])+' '+Y(p[1])+' ';});
+  if(!d)return '';
   return '<path d="'+d.trim()+'" fill="none" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>';
 }
-function mapSvg(segIdx,isTotal){
-  var m=state.map||DEFAULT.map,pts=m.points,W=920,H=880,names=Object.keys(pts);
-  var h='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:#fffdf9;border-radius:10px">';
-  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="#fffdf9"/>';
-  if(isTotal){
-    if(m.deco&&m.deco.river)h+='<path d="'+m.deco.river.d+'" fill="none" stroke="'+(m.deco.river.color||'#60a5fa')+'" stroke-width="3" stroke-dasharray="6 5"/><text x="'+(m.deco.river.tx||462)+'" y="'+(m.deco.river.ty||398)+'" font-size="12" fill="#3b82f6">'+m.deco.river.label+'</text>';
-    if(m.deco&&m.deco.labels)(m.deco.labels||[]).forEach(function(l){h+='<text x="'+l.x+'" y="'+l.y+'" font-size="'+(l.size||15)+'" fill="'+(l.color||'#9ca3af')+'" opacity="'+(l.op||1)+'">'+l.text+'</text>';});
-    h+='<text x="24" y="40" font-size="15" font-weight="600" fill="#374151">'+(m.title||'全程路线图')+'</text>';
-    h+='<text x="24" y="62" font-size="12" fill="#6b7280">'+(m.sub||'示意图，非精确比例')+'</text>';
-  } else {
-    var cur=m.segments[segIdx];
-    h+='<text x="24" y="40" font-size="14" font-weight="600" fill="'+cur.color+'">'+cur.label+' · '+cur.km+'</text>';
+function arrowSvg(sg,pts,X,Y,color){
+  var h='',i;
+  for(i=0;i<sg.route.length-1;i++){
+    var a=pts[sg.route[i]],b=pts[sg.route[i+1]];
+    if(!a||!b)continue;
+    var x1=X(a[0]),y1=Y(a[1]),x2=X(b[0]),y2=Y(b[1]),ang=Math.atan2(y2-y1,x2-x1),mx=(x1+x2)/2,my=(y1+y2)/2,ss=7;
+    h+='<polygon points="'+[(mx+ss*Math.cos(ang)),(my+ss*Math.sin(ang)),(mx+ss*Math.cos(ang+2.6)),(my+ss*Math.sin(ang+2.6)),(mx+ss*Math.cos(ang-2.6)),(my+ss*Math.sin(ang-2.6))].join(',')+'" fill="'+color+'"/>';
   }
-  h+='<g opacity=".3">';
-  m.segments.forEach(function(s){h+=polySvg(s,pts,'#9ca3af',3,s.dash||null);});
+  return h;
+}
+function mapSvg(segIdx,isTotal){
+  var m=state.map||DEFAULT.map,pts=m.points,segs=m.segments,names=Object.keys(pts),i,j;
+  var lonMin=1e9,lonMax=-1e9,latMin=1e9,latMax=-1e9;
+  names.forEach(function(n){var p=pts[n];if(!p)return;if(p[0]<lonMin)lonMin=p[0];if(p[0]>lonMax)lonMax=p[0];if(p[1]<latMin)latMin=p[1];if(p[1]>latMax)latMax=p[1];});
+  var rn=isTotal?names:(segs[segIdx]?segs[segIdx].route:names);
+  var vLonMin=1e9,vLonMax=-1e9,vLatMin=1e9,vLatMax=-1e9;
+  rn.forEach(function(n){var p=pts[n];if(!p)return;if(p[0]<vLonMin)vLonMin=p[0];if(p[0]>vLonMax)vLonMax=p[0];if(p[1]<vLatMin)vLatMin=p[1];if(p[1]>vLatMax)vLatMax=p[1];});
+  var padL=Math.max((vLonMax-vLonMin)*0.25,0.03),padB=Math.max((vLatMax-vLatMin)*0.25,0.03);
+  vLonMin-=padL;vLonMax+=padL;vLatMin-=padB;vLatMax+=padB;
+  var W=920,sx=W/(vLonMax-vLonMin),H=(vLatMax-vLatMin)*sx;
+  function X(lon){return (lon-vLonMin)*sx;}
+  function Y(lat){return (vLatMax-lat)*sx;}
+  var h='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:#eef4ea;border-radius:10px">';
+  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="#eef4ea"/>';
+  var cand=[0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5],lonStep=1,latStep=1;
+  for(i=0;i<cand.length;i++){if((vLonMax-vLonMin)/cand[i]<=9){lonStep=cand[i];break;}}
+  for(j=0;j<cand.length;j++){if((vLatMax-vLatMin)/cand[j]<=9){latStep=cand[j];break;}}
+  h+='<g stroke="#dbe7d3" stroke-width="1">';
+  for(var gx=Math.ceil(vLonMin/lonStep)*lonStep;gx<=vLonMax;gx+=lonStep){h+='<line x1="'+X(gx)+'" y1="0" x2="'+X(gx)+'" y2="'+H+'"/>';}
+  for(var gy=Math.ceil(vLatMin/latStep)*latStep;gy<=vLatMax;gy+=latStep){h+='<line x1="0" y1="'+Y(gy)+'" x2="'+W+'" y2="'+Y(gy)+'"/>';}
   h+='</g>';
-  if(isTotal){m.segments.forEach(function(s){h+=polySvg(s,pts,s.color,5,s.dash||null);});}
-  else{var cur2=m.segments[segIdx];h+=polySvg(cur2,pts,cur2.color,5,cur2.dash||null);}
-  var startN=(isTotal?m.segments[0]:m.segments[segIdx]).route[0];
-  var endSeg=isTotal?m.segments[m.segments.length-1]:m.segments[segIdx];
+  var drawn=[];
+  if(m.deco&&m.deco.river&&m.deco.river.path){
+    var rp=m.deco.river.path,d2='',i2;
+    for(i2=0;i2<rp.length;i2++){d2+=(i2?'L':'M')+X(rp[i2][0])+' '+Y(rp[i2][1])+' ';}
+    h+='<path d="'+d2.trim()+'" fill="none" stroke="'+(m.deco.river.color||'#7cb8e8')+'" stroke-width="3.5" stroke-dasharray="7 5" stroke-linecap="round"/>';
+    if(m.deco.river.label){
+      var mid=rp[Math.floor(rp.length/2)];
+      h+='<text x="'+(X(mid[0])+(m.deco.river.lx||12))+'" y="'+(Y(mid[1])+(m.deco.river.ly||-8))+'" font-size="12" fill="#4a8fc2">'+m.deco.river.label+'</text>';
+      drawn.push([X(mid[0])+(m.deco.river.lx||12),Y(mid[1])+(m.deco.river.ly||-8),m.deco.river.label]);
+    }
+  }
+  if(m.deco&&m.deco.labels)(m.deco.labels||[]).forEach(function(l){
+    var x=X(l.lon),y=Y(l.lat);
+    h+='<text x="'+x+'" y="'+y+'" font-size="'+(l.size||15)+'" fill="'+(l.color||'#7fae63')+'" opacity="'+(l.op||0.85)+'">'+l.text+'</text>';
+    drawn.push([x,y,l.text]);
+  });
+  h+='<g opacity=".28">';
+  segs.forEach(function(sg){h+=polySvg(sg,pts,X,Y,'#6b7a6e',3,sg.dash||null);});
+  h+='</g>';
+  if(isTotal){segs.forEach(function(sg){h+=polySvg(sg,pts,X,Y,sg.color,5,sg.dash||null);if(!sg.dash)h+=arrowSvg(sg,pts,X,Y,sg.color);});}
+  else{var cur=segs[segIdx];if(cur){h+=polySvg(cur,pts,X,Y,cur.color,5,cur.dash||null);if(!cur.dash)h+=arrowSvg(cur,pts,X,Y,cur.color);}}
+  var startN=(isTotal?segs[0]:segs[segIdx]).route[0];
+  var endSeg=isTotal?segs[segs.length-1]:segs[segIdx];
   var endN=endSeg.route[endSeg.route.length-1];
   names.forEach(function(n){
-    var p=pts[n];
-    h+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="#fff" stroke="#6b7280" stroke-width="2"/>';
-    if(p[0]>750){h+='<text x="'+(p[0]-9)+'" y="'+(p[1]+4)+'" font-size="13" fill="#374151" text-anchor="end">'+n+'</text>';}
-    else{h+='<text x="'+(p[0]+9)+'" y="'+(p[1]+4)+'" font-size="13" fill="#374151">'+n+'</text>';}
+    var p=pts[n];if(!p)return;
+    var x=X(p[0]),y=Y(p[1]),skip=false;
+    for(i=0;i<drawn.length;i++){if(Math.abs(drawn[i][0]-x)<32&&Math.abs(drawn[i][1]-y)<18){skip=true;break;}}
+    if(skip)return;
+    h+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="#fff" stroke="#4b5d4e" stroke-width="2"/>';
+    var lx=x+8,anchor='start',ly=y+5;
+    if(x>W-64){lx=x-8;anchor='end';}
+    if(y<20){ly=y+14;}else if(y>H-18){ly=y-6;}
+    h+='<text x="'+lx+'" y="'+ly+'" font-size="13" fill="#33403a" text-anchor="'+anchor+'">'+n+'</text>';
+    drawn.push([x,y,n]);
   });
   var sp=pts[startN],ep=pts[endN];
-  if(startN!==endN)h+='<circle cx="'+sp[0]+'" cy="'+sp[1]+'" r="11" fill="#16a34a" stroke="#fff" stroke-width="2.5"/><text x="'+sp[0]+'" y="'+(sp[1]+4)+'" font-size="11" fill="#fff" text-anchor="middle">起</text>';
-  h+='<circle cx="'+ep[0]+'" cy="'+ep[1]+'" r="11" fill="#dc2626" stroke="#fff" stroke-width="2.5"/><text x="'+ep[0]+'" y="'+(ep[1]+4)+'" font-size="11" fill="#fff" text-anchor="middle">终</text>';
+  if(sp&&startN!==endN)h+='<circle cx="'+X(sp[0])+'" cy="'+Y(sp[1])+'" r="11" fill="#16a34a" stroke="#fff" stroke-width="2.5"/><text x="'+X(sp[0])+'" y="'+(Y(sp[1])+4)+'" font-size="11" fill="#fff" text-anchor="middle">起</text>';
+  if(ep)h+='<circle cx="'+X(ep[0])+'" cy="'+Y(ep[1])+'" r="11" fill="#dc2626" stroke="#fff" stroke-width="2.5"/><text x="'+X(ep[0])+'" y="'+(Y(ep[1])+4)+'" font-size="11" fill="#fff" text-anchor="middle">终</text>';
   if(isTotal){
-    var lx=24;
-    m.segments.forEach(function(sg,i){
-      h+='<line x1="'+lx+'" x2="'+(lx+36)+'" y1="816" y2="816" stroke="'+sg.color+'" stroke-width="5" stroke-linecap="round"/>';
-      h+='<text x="'+(lx+42)+'" y="821" font-size="12" fill="#374151">'+(i+1)+'</text>';
-      lx+=78;
+    h+='<text x="16" y="30" font-size="15" font-weight="600" fill="#2d3a2f">'+(m.title||'全程路线图')+'</text>';
+    h+='<text x="16" y="50" font-size="11.5" fill="#5b6b5c">'+(m.sub||'示意图，非精确比例')+'</text>';
+  }else if(segs[segIdx]){
+    h+='<text x="16" y="28" font-size="14" font-weight="600" fill="'+segs[segIdx].color+'">'+segs[segIdx].label+' · '+segs[segIdx].km+'</text>';
+  }
+  if(isTotal){
+    var lyy=H-28,lxx=16;
+    segs.forEach(function(sg,i){
+      h+='<line x1="'+lxx+'" x2="'+(lxx+34)+'" y1="'+lyy+'" y2="'+lyy+'" stroke="'+sg.color+'" stroke-width="5" stroke-linecap="round"/>';
+      h+='<text x="'+(lxx+40)+'" y="'+(lyy+4)+'" font-size="11.5" fill="#374151">'+(i+1)+'</text>';
+      lxx+=62;
     });
   }
+  var kmPerPx=111.32/sx,kmC=[10,20,50,100,200,500],km=0;
+  for(i=0;i<kmC.length;i++){if(kmC[i]/kmPerPx<=190&&kmC[i]/kmPerPx>=24){km=kmC[i];break;}}
+  if(km){
+    var bl=km/kmPerPx;
+    h+='<line x1="16" y1="'+(H-12)+'" x2="'+(16+bl)+'" y2="'+(H-12)+'" stroke="#5b6b5c" stroke-width="3"/>';
+    h+='<line x1="16" y1="'+(H-18)+'" x2="16" y2="'+(H-6)+'" stroke="#5b6b5c" stroke-width="3"/>';
+    h+='<line x1="'+(16+bl)+'" y1="'+(H-18)+'" x2="'+(16+bl)+'" y2="'+(H-6)+'" stroke="#5b6b5c" stroke-width="3"/>';
+    h+='<text x="16" y="'+(H-21)+'" font-size="10.5" fill="#5b6b5c">'+km+' km</text>';
+  }
+  h+='<g transform="translate('+(W-30)+',30)"><line x1="0" y1="0" x2="0" y2="-13" stroke="#2d3a2f" stroke-width="2"/><polygon points="0,-19 -4,-7 4,-7" fill="#2d3a2f"/><text x="0" y="10" font-size="10" fill="#2d3a2f" text-anchor="middle">北</text></g>';
   h+='</svg>';
   return h;
 }
+
 /* ---------- render ---------- */
 function render(){
   $id('app-title').textContent=state.meta.title;
