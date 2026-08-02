@@ -652,22 +652,34 @@ function load(){var d=JSON.parse(JSON.stringify(DEFAULT));try{var s=localStorage
 var cloudTimer=null;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,3000);}
+var lastCloudErr=0;
 function cloudPush(){
   cloudTimer=null;
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
-  fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}).catch(function(){});
+  var body=JSON.stringify(state),attempts=0;
+  function tryPush(){
+    attempts++;
+    fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:body})
+    .then(function(r){if(!r.ok)throw 0;})
+    .catch(function(){
+      if(attempts<2){setTimeout(tryPush,2000);}
+      else if(Date.now()-lastCloudErr>60000){lastCloudErr=Date.now();toast('⚠️ 云端暂不可用，修改已保存在本地');}
+    });
+  }
+  tryPush();
 }
-function cloudPull(){
+function cloudPull(force){
   return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
     if(!d||!d.meta||!d.days)throw 0;
-    var ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
+    var ae=document.activeElement;if(!force&&ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
     var mine=state.meta.syncAt||0,theirs=d.meta.syncAt||0;
-    if(theirs>mine){
+    if(force||theirs>mine){
       state=JSON.parse(JSON.stringify(d));
       if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
       persist();render();
-    }
-  }).catch(function(){});
+      if(force)toast('✅ 已更新为云端最新版');
+    }else if(force){toast('已是最新版本');}
+  }).catch(function(){if(force)toast('⚠️ 云端暂时无法连接');});
 }
 function $id(x){return document.getElementById(x);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -951,13 +963,7 @@ function wire(){
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='data.json';a.click();URL.revokeObjectURL(a.href);
     toast('已导出 data.json（上传到仓库即可更新网址）');$id('mask').classList.remove('show');
   });
-  $id('act-pull').addEventListener('click',function(){
-    fetch('data.json?'+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
-      if(!d||!d.meta||!d.days)throw 0;
-      state=JSON.parse(JSON.stringify(d));if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
-      save();render();toast('已更新为线上最新版');$id('mask').classList.remove('show');
-    }).catch(function(){toast('线上暂无可拉取的数据');});
-  });
+  $id('act-pull').addEventListener('click',function(){$id('mask').classList.remove('show');cloudPull(true);});
   $id('act-sync').addEventListener('click',function(){
     var token=($id('gh-token').value||'').trim();
     if(!token){toast('请先在上方输入 GitHub 令牌');return;}
@@ -1038,6 +1044,8 @@ if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
 function seedOnline(){
   return fetch('data.json?'+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
     if(!d||!d.meta||!d.days)throw 0;
+    var had=false;try{had=!!localStorage.getItem(KEY);}catch(e){}
+    if(had)return;
     state=JSON.parse(JSON.stringify(d));
     if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
     try{save();}catch(e){}
