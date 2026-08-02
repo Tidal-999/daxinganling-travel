@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c0352e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>大兴安岭赏秋攻略</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --ink:#232733;--mut:#6b7280;--bg:#f4f1ec;--card:#ffffff;--line:#e7e1d8;
+    --red:#c0352e;--orange:#e0522a;--tra:#2563eb;--sight:#16a34a;--food:#ea580c;
+    --shop:#db2777;--stay:#7c3aed;--move:#64748b;--hot:#dc2626;--warn:#b45309;
+  }
+  html{scroll-behavior:smooth;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;font-size:14px;padding-bottom:76px;}
+  #app{max-width:540px;margin:0 auto;}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#e0522a,#c0352e 55%,#8f2d2d);
+    color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;box-shadow:0 3px 12px rgba(192,53,46,.28);}
+  .h-top{display:flex;align-items:center;gap:8px;}
+  header h1{font-size:18px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.5px;}
+  #app-sub{font-size:12px;opacity:.92;margin-top:4px;}
+  .h-btn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;
+    border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .h-btn.on{background:#fff;color:var(--red);border-color:#fff;font-weight:600;}
+  nav.tabs{position:sticky;top:0;z-index:19;display:flex;background:#fff;border-bottom:1px solid var(--line);}
+  nav.tabs button{flex:1;border:0;background:none;padding:11px 2px 9px;font-size:12px;color:var(--mut);
+    border-bottom:3px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  nav.tabs button .ic{font-size:17px;line-height:1;}
+  nav.tabs button.on{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+  main{padding:14px 14px 30px;}
+  .sec{margin-bottom:16px;}
+  .sec>h2{font-size:15px;display:flex;align-items:center;gap:7px;margin:4px 2px 9px;}
+  .sec>h2::before{content:"";width:4px;height:15px;border-radius:2px;background:var(--sight);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+    box-shadow:0 2px 8px rgba(31,36,48,.05);margin-bottom:12px;}
+  .card h3{font-size:14px;margin-bottom:6px;}
+  .row{font-size:13px;display:flex;gap:7px;align-items:baseline;}
+  .row b{color:var(--tra);white-space:nowrap;}
+  .note{font-size:12px;color:var(--mut);margin-top:6px;}
+  .day{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 2px 10px rgba(31,36,48,.06);margin-bottom:14px;}
+  .day-head{display:flex;align-items:center;gap:12px;padding:12px 15px;color:#fff;}
+  .d1{background:linear-gradient(120deg,#2563eb,#1d4ed8);}
+  .d2{background:linear-gradient(120deg,#16a34a,#15803d);}
+  .d3{background:linear-gradient(120deg,#ea580c,#c2410c);}
+  .d4{background:linear-gradient(120deg,#7c3aed,#6d28d9);}
+  .d5{background:linear-gradient(120deg,#db2777,#be185d);}
+  .d6{background:linear-gradient(120deg,#0d9488,#0f766e);}
+  .d7{background:linear-gradient(120deg,#64748b,#475569);}
+  .day-head .dt{font-size:17px;font-weight:700;letter-spacing:1px;}
+  .day-head .ds{font-size:11.5px;opacity:.92;margin-top:1px;}
+  .day-head .theme{margin-left:auto;font-size:11.5px;text-align:right;opacity:.95;}
+  .tl{position:relative;padding:4px 0;}
+  .item{display:grid;grid-template-columns:58px 1fr;gap:12px;padding:9px 15px;position:relative;}
+  .item::before{content:"";position:absolute;left:80px;top:0;bottom:0;width:2px;background:var(--line);}
+  .item:first-child::before{top:24px;}
+  .item:last-child::before{bottom:auto;height:24px;}
+  .item .time{font-weight:700;color:#334155;font-size:12.5px;text-align:right;padding-top:1px;}
+  .item .ttl{font-size:13.5px;font-weight:600;}
+  .item .desc{font-size:12.5px;color:#4b5563;margin-top:2px;}
+  .item .dot{position:absolute;left:75px;top:13px;width:11px;height:11px;border-radius:50%;border:2.5px solid var(--card);z-index:1;}
+  .tag{display:inline-block;border-radius:6px;padding:0 7px;font-size:10.5px;color:#fff;margin-right:6px;vertical-align:1px;}
+  .t-tra{background:var(--tra);}.t-sight{background:var(--sight);}.t-food{background:var(--food);}
+  .t-shop{background:var(--shop);}.t-stay{background:var(--stay);}.t-move{background:var(--move);}
+  .urgent{border:1px solid #fca5a5;background:#fef2f2;border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:10px;}
+  .urgent b{color:var(--hot);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+  th{background:#faf7f2;font-weight:600;white-space:nowrap;}
+  ul.tips{margin:0;}
+  ul.tips li{margin:4px 0 4px 17px;font-size:12.5px;color:#4b5563;}
+  .list-row{display:flex;align-items:flex-start;gap:8px;padding:8px 2px;border-bottom:1px dashed var(--line);font-size:13px;}
+  .list-row:last-child{border-bottom:0;}
+  .list-row input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--red);flex:none;}
+  .list-row.done .bk-t{text-decoration:line-through;color:var(--mut);}
+  .bk-t{flex:1;min-width:0;}
+  .bk-u{flex:none;font-size:10px;color:var(--hot);border:1px solid #fca5a5;border-radius:6px;padding:0 5px;}
+  /* edit mode */
+  .edit-note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
+    padding:8px 12px;font-size:12px;margin-bottom:12px;}
+  .inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px;
+    font-family:inherit;background:#fcfbf9;color:var(--ink);}
+  .inp:focus{outline:2px solid #c7d2fe;border-color:#818cf8;}
+  .ta{min-height:44px;resize:vertical;}
+  .edit-block{display:flex;flex-direction:column;gap:6px;padding:8px 2px;border-bottom:1px dashed var(--line);}
+  .edit-block:last-child{border-bottom:0;}
+  .edit-head{display:flex;gap:6px;}
+  .edit-head input{flex:1;}
+  .mini{flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 9px;
+    font-size:12px;cursor:pointer;color:#444;}
+  .mini.danger{color:var(--hot);border-color:#fecaca;background:#fef2f2;}
+  .mini.ok{color:var(--sight);border-color:#bbf7d0;background:#f0fdf4;}
+  .add-btn{width:100%;margin-top:6px;border:1.5px dashed #c7b8a8;background:transparent;color:#8a6b52;
+    border-radius:10px;padding:8px;font-size:13px;cursor:pointer;}
+  .add-btn:active{background:#f6efe6;}
+  .day-edit{margin:10px 12px;display:flex;flex-direction:column;gap:6px;}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(20,20,30,.45);z-index:50;display:none;align-items:flex-end;justify-content:center;}
+  .mask.show{display:flex;}
+  .sheet{background:#fff;width:100%;max-width:540px;border-radius:18px 18px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom,0px)+18px);
+    animation:up .18s ease;}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet h3{font-size:15px;margin-bottom:10px;}
+  .sheet button{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--line);
+    border-radius:12px;background:#fff;font-size:14px;margin-bottom:8px;cursor:pointer;}
+  .sheet button:active{background:#f6f1ea;}
+  .sheet .x{float:right;border:0;background:#f1ece4;width:28px;height:28px;border-radius:50%;text-align:center;
+    font-size:14px;cursor:pointer;padding:0;margin:0;}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(30,30,40,.92);color:#fff;
+    padding:9px 16px;border-radius:999px;font-size:13px;z-index:60;opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;}
+  .toast.show{opacity:1;}
+  .kpi{display:flex;gap:8px;margin-bottom:12px;}
+  .kpi .card{flex:1;text-align:center;margin:0;}
+  .kpi .n{font-size:17px;font-weight:700;color:var(--red);}
+  .kpi .l{font-size:11px;color:var(--mut);}
+  .bottom-fab{position:fixed;right:16px;bottom:84px;z-index:30;display:none;}
+  .bottom-fab.show{display:block;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="h-top">
+      <h1 id="app-title">大兴安岭赏秋攻略</h1>
+      <button class="h-btn" id="btn-data">⚙ 数据</button>
+      <button class="h-btn" id="btn-edit">✏️ 编辑</button>
+    </div>
+    <p id="app-sub"></p>
+  </header>
+  <nav class="tabs" id="tabs">
+    <button data-tab="trip" class="on"><span class="ic">🗓️</span>行程</button>
+    <button data-tab="transport"><span class="ic">🚗</span>交通</button>
+    <button data-tab="book"><span class="ic">📌</span>预约</button>
+    <button data-tab="budget"><span class="ic">💰</span>花费</button>
+    <button data-tab="tips"><span class="ic">💡</span>贴士</button>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<div class="mask" id="mask">
+  <div class="sheet">
+    <button class="x" id="sheet-close">✕</button>
+    <h3 id="sheet-title">数据管理</h3>
+    <button id="act-copy">📋 复制分享文本（发微信/备忘录）</button>
+    <button id="act-export">⬇️ 导出备份 JSON 文件</button>
+    <button id="act-import">⬆️ 导入备份 JSON 文件</button>
+    <button id="act-reset">🔄 恢复为默认攻略</button>
+  </div>
+</div>
+<input type="file" id="file-import" accept=".json,application/json" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='csl-travel-app-v1';
+
+var DEFAULT=
+{
+  "meta": {
+    "title": "大兴安岭赏秋 · 7天自驾路书",
+    "sub": "海拉尔出发 · 穿越北境金色童话 · 总里程约1800km",
+    "alert": "⚠️ <b>秋季是旺季</b>：机票、租车、沿线住宿（室韦/临江、黑山头蒙古包）务必提前预订"
+  },
+  "transport": {
+    "outbound": {
+      "title": "起点 · 海拉尔（建议租车自驾）",
+      "lines": [
+        "抵达海拉尔：可飞海拉尔机场，或高铁至海拉尔站",
+        "当地租车自驾（SUV/越野，建议全险），全程约1800km",
+        "秋季为旺季，建议提前订机票、车辆与住宿"
+      ],
+      "note": "路线：海拉尔 → 莫日格勒河 → 额尔古纳 → 根河 → 莫尔道嘎 → 室韦/临江 → 边防卡线 → 黑山头 → 满洲里 → 阿尔山"
+    },
+    "ret": {
+      "title": "返程 · 第7天",
+      "lines": [
+        "上午：阿尔山游玩（驼峰岭天池、杜鹃湖）",
+        "下午：开始返程",
+        "可选：返回海拉尔还车/乘机，或从阿尔山直接离开"
+      ],
+      "note": "阿尔山 → 海拉尔约300-400km，返程日半天车程"
+    },
+    "route": "海拉尔 → 莫日格勒河 → 额尔古纳 → 根河（敖鲁古雅）→ 莫尔道嘎 → 室韦/临江 → 边防卡线（九卡/七卡/五卡）→ 黑山头 → 满洲里 → 阿尔山",
+    "compareTitle": "💡 自驾 vs 包车/跟团",
+    "compareLines": [
+      "自驾：全程约1800km，自由度高，可随时停车拍照",
+      "包车/跟团：省心省力，适合不想开长途的伙伴"
+    ],
+    "compareNote": "当地租车多支持异地还车（如海拉尔取、阿尔山还）"
+  },
+  "days": [
+    {
+      "id": "d1",
+      "name": "DAY 1",
+      "date": "海拉尔 → 额尔古纳",
+      "tagline": "150km · 3h",
+      "theme": "天下第一曲水 + 亚洲第一湿地",
+      "cls": "d1",
+      "items": [
+        {
+          "time": "上午",
+          "title": "海拉尔出发 → 莫日格勒河",
+          "desc": "约150km · 3h，草原公路沿途即景",
+          "cat": "tra"
+        },
+        {
+          "time": "中午",
+          "title": "莫日格勒河：无人机必飞",
+          "desc": "“天下第一曲水”在金色草原上蜿蜒，秋色最佳机位",
+          "cat": "sight"
+        },
+        {
+          "time": "下午",
+          "title": "额尔古纳湿地",
+          "desc": "登上观景台，俯瞰亚洲第一湿地的秋日彩林",
+          "cat": "sight"
+        },
+        {
+          "time": "住宿",
+          "title": "宿额尔古纳市",
+          "desc": "入住后市区晚餐、休整",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "name": "DAY 2",
+      "date": "额尔古纳 → 根河",
+      "tagline": "130km · 2h",
+      "theme": "与驯鹿亲密接触",
+      "cls": "d2",
+      "items": [
+        {
+          "time": "上午",
+          "title": "额尔古纳 → 根河",
+          "desc": "约130km · 2h",
+          "cat": "tra"
+        },
+        {
+          "time": "全天",
+          "title": "敖鲁古雅使鹿部落",
+          "desc": "花半天时间与驯鹿亲密接触，拍摄森林人文大片，此行独一无二的体验",
+          "cat": "sight"
+        },
+        {
+          "time": "住宿",
+          "title": "宿根河市",
+          "desc": "",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d3",
+      "name": "DAY 3",
+      "date": "根河 → 莫尔道嘎 → 室韦/临江",
+      "tagline": "230km · 4h",
+      "theme": "森林小火车穿越金色林海",
+      "cls": "d3",
+      "items": [
+        {
+          "time": "上午",
+          "title": "根河 → 莫尔道嘎",
+          "desc": "约230km · 4h",
+          "cat": "tra"
+        },
+        {
+          "time": "中午",
+          "title": "莫尔道嘎国家森林公园",
+          "desc": "不必深入，关键是体验“森林小火车”穿梭在金黄林海之中",
+          "cat": "sight"
+        },
+        {
+          "time": "下午",
+          "title": "前往室韦 / 临江",
+          "desc": "边境小镇，俄式风情木刻楞",
+          "cat": "move"
+        },
+        {
+          "time": "住宿",
+          "title": "宿室韦或临江",
+          "desc": "",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d4",
+      "name": "DAY 4",
+      "date": "室韦 → 边防卡线 → 黑山头",
+      "tagline": "200km · 4h+",
+      "theme": "最美边境公路 + 边境日落",
+      "cls": "d4",
+      "items": [
+        {
+          "time": "全天",
+          "title": "边防卡线：九卡、七卡、五卡",
+          "desc": "最美边境公路！额尔古纳河在侧、对面是俄罗斯，沿途秋色与麦田，随时下车拍照",
+          "cat": "sight"
+        },
+        {
+          "time": "傍晚",
+          "title": "黑山头边境日落",
+          "desc": "骑马或开车上山顶，守候一场辽阔的边境日落",
+          "cat": "sight"
+        },
+        {
+          "time": "住宿",
+          "title": "宿黑山头（蒙古包）",
+          "desc": "体验草原住宿",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d5",
+      "name": "DAY 5",
+      "date": "黑山头 → 满洲里",
+      "tagline": "200km · 3h",
+      "theme": "套娃乐园 + 国门 + 夜景",
+      "cls": "d5",
+      "items": [
+        {
+          "time": "上午",
+          "title": "黑山头 → 满洲里",
+          "desc": "约200km · 3h",
+          "cat": "tra"
+        },
+        {
+          "time": "中午",
+          "title": "套娃广场",
+          "desc": "打卡巨型套娃乐园，充满异域风情，拍照很出片",
+          "cat": "sight"
+        },
+        {
+          "time": "下午",
+          "title": "国门景区",
+          "desc": "感受国门庄严，看中俄铁路从下方穿过",
+          "cat": "sight"
+        },
+        {
+          "time": "晚上",
+          "title": "满洲里夜景",
+          "desc": "夜晚的满洲里金碧辉煌，像一座小澳门",
+          "cat": "sight"
+        },
+        {
+          "time": "住宿",
+          "title": "宿满洲里市",
+          "desc": "",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d6",
+      "name": "DAY 6",
+      "date": "满洲里 → 阿尔山国家森林公园",
+      "tagline": "430km · 5-6h",
+      "theme": "赶路日 · 傍晚抵达森林",
+      "cls": "d6",
+      "items": [
+        {
+          "time": "白天",
+          "title": "满洲里 → 阿尔山",
+          "desc": "约430km · 5-6h，今天以赶路为主，沿途草原风光依然很美",
+          "cat": "tra"
+        },
+        {
+          "time": "下午",
+          "title": "抵达阿尔山国家森林公园",
+          "desc": "办理入住，养精蓄锐",
+          "cat": "stay"
+        },
+        {
+          "time": "住宿",
+          "title": "宿阿尔山天池 / 兴安服务区",
+          "desc": "",
+          "cat": "stay"
+        }
+      ]
+    },
+    {
+      "id": "d7",
+      "name": "DAY 7",
+      "date": "阿尔山游玩 → 返程",
+      "tagline": "公园内游览",
+      "theme": "驼峰岭天池 + 杜鹃湖",
+      "cls": "d7",
+      "items": [
+        {
+          "time": "上午",
+          "title": "驼峰岭天池",
+          "desc": "阿尔山的精华！需爬约900级台阶，俯瞰天池秋色的view绝对值得",
+          "cat": "sight"
+        },
+        {
+          "time": "中午",
+          "title": "杜鹃湖",
+          "desc": "平静湖面倒映着金色森林，非常静谧",
+          "cat": "sight"
+        },
+        {
+          "time": "下午",
+          "title": "开始返程",
+          "desc": "可返回海拉尔（还车/乘机），或从阿尔山直接离开",
+          "cat": "tra"
+        }
+      ]
+    }
+  ],
+  "bookings": [
+    {
+      "text": "提前订往返海拉尔的机票/火车票（秋季旺季）",
+      "done": false,
+      "urgent": true
+    },
+    {
+      "text": "提前租车：SUV/越野车、全险，确认车况",
+      "done": false,
+      "urgent": true
+    },
+    {
+      "text": "预订沿线住宿：室韦/临江、黑山头蒙古包等紧俏",
+      "done": false,
+      "urgent": true
+    },
+    {
+      "text": "确认景区开放：莫尔道嘎森林小火车、阿尔山门票/观光车",
+      "done": false,
+      "urgent": true
+    },
+    {
+      "text": "林区防火：严禁烟火，配合防火码与检查",
+      "done": false,
+      "urgent": false
+    },
+    {
+      "text": "下载离线地图（林区/卡线信号弱），备充电宝",
+      "done": false,
+      "urgent": false
+    },
+    {
+      "text": "备秋冬季衣物：羽绒服、防风外套、帽子手套",
+      "done": false,
+      "urgent": false
+    }
+  ],
+  "budget": [
+    {
+      "name": "往返大交通（机票）",
+      "price": "1500-2500元/人",
+      "note": "视出发城市与预订时间"
+    },
+    {
+      "name": "租车（SUV 7天）",
+      "price": "约2500-4000",
+      "note": "含保险"
+    },
+    {
+      "name": "油费+过路费+停车",
+      "price": "约1500-2000",
+      "note": "全程约1800km"
+    },
+    {
+      "name": "住宿（6晚）",
+      "price": "约1800-3000",
+      "note": "市区酒店/民宿+蒙古包"
+    },
+    {
+      "name": "餐饮",
+      "price": "约1000-1500",
+      "note": "按2人"
+    },
+    {
+      "name": "门票",
+      "price": "约600-800",
+      "note": "湿地、敖鲁古雅、莫尔道嘎、阿尔山等"
+    },
+    {
+      "name": "其他（特产/装备）",
+      "price": "约500-1000",
+      "note": "预留"
+    }
+  ],
+  "tips": [
+    "最佳赏秋季：9月中下旬至10月上旬，出发前关注当年叶色变化",
+    "大兴安岭林区进入防火季，严禁携带火种、严禁野外用火",
+    "早晚温差大（约0~15℃），羽绒服、防风外套、暖宝宝必备",
+    "边防卡线沿途多为边境管理区，不得拍摄边境/军事设施，无人机慎飞",
+    "林区和卡线部分路段信号弱，提前下载离线地图、备足现金",
+    "阿尔山驼峰岭天池需爬约900级台阶，穿舒适徒步鞋、备好水",
+    "秋季旺季酒店紧俏，尤其室韦/临江与黑山头蒙古包，务必提前预订"
+  ]
+}
+var state, editing=false, tab='trip';
+
+function load(){try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.meta)return o;}}catch(e){}return JSON.parse(JSON.stringify(DEFAULT));}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function $id(x){return document.getElementById(x);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function catName(c){return {tra:'交通',sight:'景点',food:'美食',shop:'购物',stay:'住宿',move:'移动'}[c]||c;}
+function catTag(c){return '<span class="tag t-'+c+'">'+catName(c)+'</span>';}
+function toast(msg){var t=$id('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},1800);}
+
+/* ---------- render ---------- */
+function render(){
+  $id('app-title').textContent=state.meta.title;
+  $id('app-sub').textContent=state.meta.sub;
+  var be=$id('btn-edit');
+  be.textContent=editing?'✔️ 完成':'✏️ 编辑';
+  be.classList.toggle('on',editing);
+  document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.tab===tab);});
+  if(tab==='trip')renderTrip();else if(tab==='transport')renderTransport();
+  else if(tab==='book')renderBook();else if(tab==='budget')renderBudget();else renderTips();
+}
+
+function renderTrip(){
+  var h='';
+  if(editing){
+    h+='<div class="edit-note">编辑模式：修改会自动保存。可改标题、时间、内容，拖动顺序用 ↑ ↓，删除用 🗑。</div>';
+    h+='<div class="card"><h3>🏷️ 标题设置</h3><div style="display:flex;flex-direction:column;gap:6px">'
+      +'<input class="inp" data-meta="title" value="'+esc(state.meta.title)+'" placeholder="攻略标题">'
+      +'<input class="inp" data-meta="sub" value="'+esc(state.meta.sub)+'" placeholder="副标题"></div></div>';
+  }
+  h+='<div class="kpi"><div class="card"><div class="n">'+state.days.length+'</div><div class="l">天行程</div></div>'
+    +'<div class="card"><div class="n">'+countItems()+'</div><div class="l">个安排</div></div>'
+    +'<div class="card"><div class="n">'+state.bookings.filter(function(b){return !b.done;}).length+'</div><div class="l">待办</div></div></div>';
+  if(state.meta.alert)h+='<div class="urgent">'+state.meta.alert+'</div>';
+  state.days.forEach(function(d,di){
+    h+='<div class="day"><div class="day-head '+d.cls+'"><div><div class="dt">'+esc(d.name)+'</div><div class="ds">'+esc(d.date)+' · '+esc(d.tagline)+'</div></div>'
+      +'<div class="theme">'+esc(d.theme)+'</div></div>';
+    if(editing){
+      h+='<div class="day-edit">'
+        +'<div class="edit-head"><input class="inp" data-day="'+di+'" data-f="name" value="'+esc(d.name)+'" placeholder="名称"><input class="inp" data-day="'+di+'" data-f="date" value="'+esc(d.date)+'" placeholder="日期"></div>'
+        +'<div class="edit-head"><input class="inp" data-day="'+di+'" data-f="tagline" value="'+esc(d.tagline)+'" placeholder="标签"><input class="inp" data-day="'+di+'" data-f="theme" value="'+esc(d.theme)+'" placeholder="主题"></div>'
+        +'<select class="inp" data-day="'+di+'" data-f="cls">'
+        +['d1','d2','d3','d4','d5','d6','d7'].map(function(c){return '<option value="'+c+'"'+(d.cls===c?' selected':'')+'>DAY'+(parseInt(c[1])||1)+' 配色</option>';}).join('')
+        +'</select></div>';
+    }
+    h+='<div class="tl">';
+    d.items.forEach(function(it,ii){
+      h+='<div class="item"><span class="dot t-'+it.cat+'"></span><div class="time">'+esc(it.time)+'</div><div>';
+      if(editing){
+        h+='<div class="edit-block">'
+          +'<div class="edit-head"><input class="inp" data-day="'+di+'" data-idx="'+ii+'" data-f="time" value="'+esc(it.time)+'" placeholder="时间">'
+          +'<select class="inp" style="max-width:86px;flex:none" data-day="'+di+'" data-idx="'+ii+'" data-f="cat">'
+          +['tra','sight','food','shop','stay','move'].map(function(c){return '<option value="'+c+'"'+(it.cat===c?' selected':'')+'>'+catName(c)+'</option>';}).join('')
+          +'</select></div>'
+          +'<input class="inp" data-day="'+di+'" data-idx="'+ii+'" data-f="title" value="'+esc(it.title)+'" placeholder="标题">'
+          +'<textarea class="inp ta" data-day="'+di+'" data-idx="'+ii+'" data-f="desc" placeholder="说明">'+esc(it.desc)+'</textarea>'
+          +'<div class="edit-head"><button class="mini" data-act="up" data-day="'+di+'" data-idx="'+ii+'">↑</button>'
+          +'<button class="mini" data-act="down" data-day="'+di+'" data-idx="'+ii+'">↓</button>'
+          +'<button class="mini danger" data-act="del" data-day="'+di+'" data-idx="'+ii+'">🗑 删除</button></div>'
+          +'</div>';
+      }else{
+        h+='<div class="ttl">'+catTag(it.cat)+esc(it.title)+'</div>';
+        if(it.desc)h+='<div class="desc">'+esc(it.desc)+'</div>';
+      }
+      h+='</div></div>';
+    });
+    h+='</div>';
+    if(editing)h+='<div style="padding:0 12px 12px"><button class="add-btn" data-act="additem" data-day="'+di+'">＋ 添加安排</button></div>';
+    if(editing&&state.days.length>1)h+='<div style="padding:0 12px 12px"><button class="add-btn" style="border-color:#fecaca;color:var(--hot)" data-act="delday" data-day="'+di+'">删除这一天</button></div>';
+    h+='</div>';
+  });
+  if(editing)h+='<button class="add-btn" data-act="addday">＋ 添加新的一天</button>';
+  $id('main').innerHTML=h;
+}
+
+function renderTransport(){
+  var h='';
+  if(editing)h+='<div class="edit-note">编辑模式：修改会自动保存。</div>';
+  var sects=[['outbound',state.transport.outbound],['ret',state.transport.ret]];
+  sects.forEach(function(s){
+    var key=s[0],o=s[1];
+    h+='<div class="card"><h3>'+esc(o.title)+'</h3>';
+    if(editing){
+      h+='<div style="display:flex;flex-direction:column;gap:6px">'
+        +'<input class="inp" data-tr="'+key+'" data-f="title" value="'+esc(o.title)+'">'
+        +'<textarea class="inp ta" data-tr="'+key+'" data-f="lines" placeholder="每行一条">'+esc(o.lines.join('\n'))+'</textarea>'
+        +'<input class="inp" data-tr="'+key+'" data-f="note" value="'+esc(o.note)+'" placeholder="备注">'
+        +'</div>';
+    }else{
+      o.lines.forEach(function(l){h+='<div class="row"><span>•</span><span>'+esc(l)+'</span></div>';});
+      if(o.note)h+='<div class="note">'+esc(o.note)+'</div>';
+    }
+    h+='</div>';
+  });
+  h+='<div class="card"><h3>🗺️ 推荐路线</h3>';
+  if(editing){h+='<textarea class="inp ta" data-tr="route" data-f="lines">'+esc(state.transport.route)+'</textarea>';}
+  else{h+='<div class="row"><span>'+esc(state.transport.route)+'</span></div>';}
+  h+='</div>';
+  h+='<div class="card"><h3>'+esc(state.transport.compareTitle)+'</h3>';
+    state.transport.compareLines.forEach(function(l){h+='<div class="row"><span>'+esc(l)+'</span></div>';});
+    if(state.transport.compareNote)h+='<div class="note">'+esc(state.transport.compareNote)+'</div>';
+    h+='</div>';
+  $id('main').innerHTML=h;
+}
+
+function renderBook(){
+  var h='';
+  if(editing)h+='<div class="edit-note">编辑模式：可直接改文字、删条目、加条目。</div>';
+  h+='<div class="card"><h3>📌 出发前必办清单</h3>';
+  state.bookings.forEach(function(b,i){
+    h+='<div class="list-row'+(b.done?' done':'')+'">'
+      +'<input type="checkbox" data-act="bk" data-idx="'+i+'"'+(b.done?' checked':'')+'>';
+    if(editing){
+      h+='<div style="flex:1;display:flex;flex-direction:column;gap:5px">'
+        +'<input class="inp" data-bk="'+i+'" data-f="text" value="'+esc(b.text)+'">'
+        +'<div class="edit-head"><button class="mini" data-act="bkurg" data-idx="'+i+'">'+(b.urgent?'★ 紧急':'☆ 普通')+'</button>'
+        +'<button class="mini danger" data-act="bkdel" data-idx="'+i+'">🗑</button></div></div>';
+    }else{
+      h+='<div class="bk-t">'+(b.urgent?'<span class="bk-u">紧急</span> ':'')+esc(b.text)+'</div>';
+    }
+    h+='</div>';
+  });
+  if(editing)h+='<button class="add-btn" data-act="bkadd">＋ 添加待办</button>';
+  h+='</div>';
+  if(editing)h+='<button class="add-btn" data-act="addday" style="display:none"></button>';
+  $id('main').innerHTML=h;
+}
+
+function renderBudget(){
+  var h='';
+  if(editing)h+='<div class="edit-note">编辑模式：修改会自动保存。</div>';
+  h+='<div class="card" style="padding:0;overflow:hidden"><table><tr><th>项目</th><th>费用</th><th>说明</th></tr>';
+  state.budget.forEach(function(r,i){
+    if(editing){
+      h+='<tr><td><input class="inp" data-bu="'+i+'" data-f="name" value="'+esc(r.name)+'"></td>'
+        +'<td><input class="inp" data-bu="'+i+'" data-f="price" value="'+esc(r.price)+'"></td>'
+        +'<td><input class="inp" data-bu="'+i+'" data-f="note" value="'+esc(r.note)+'">'
+        +'<button class="mini danger" style="margin-top:4px" data-act="budel" data-idx="'+i+'">🗑 删除</button></td></tr>';
+    }else{
+      h+='<tr><td>'+esc(r.name)+'</td><td>'+esc(r.price)+'</td><td>'+esc(r.note)+'</td></tr>';
+    }
+  });
+  h+='</table></div>';
+  if(editing)h+='<button class="add-btn" data-act="buadd">＋ 添加花费项</button>';
+  $id('main').innerHTML=h;
+}
+
+function renderTips(){
+  var h='';
+  if(editing)h+='<div class="edit-note">编辑模式：修改会自动保存。</div>';
+  h+='<div class="card"><ul class="tips">';
+  if(editing){
+    state.tips.forEach(function(t,i){
+      h+='<li style="list-style:none;margin:6px 0;display:flex;gap:6px">'
+        +'<textarea class="inp ta" style="flex:1" data-tip="'+i+'" data-f="t">'+esc(t)+'</textarea>'
+        +'<button class="mini danger" data-act="tipdel" data-idx="'+i+'">🗑</button></li>';
+    });
+  }else{
+    state.tips.forEach(function(t){h+='<li>'+esc(t)+'</li>';});
+  }
+  h+='</ul>';
+  if(editing)h+='<button class="add-btn" data-act="tipadd">＋ 添加贴士</button>';
+  h+='</div>';
+  $id('main').innerHTML=h;
+}
+
+function countItems(){return state.days.reduce(function(n,d){return n+d.items.length;},0);}
+
+/* ---------- actions ---------- */
+function updown(di,ii,dir){
+  var d=state.days[di],arr=d.items,ni=ii+dir;
+  if(ni<0||ni>=arr.length)return;
+  var t=arr[ii];arr[ii]=arr[ni];arr[ni]=t;save();render();
+}
+function delItem(di,ii){state.days[di].items.splice(ii,1);save();render();}
+function addItem(di){state.days[di].items.push({time:'00:00',title:'新安排',desc:'',cat:'move'});save();render();}
+function addDay(){state.days.push({id:'d'+Date.now(),name:'DAY '+(state.days.length+1),date:'新日期',tagline:'',theme:'',cls:'d4',items:[{time:'00:00',title:'新安排',desc:'',cat:'move'}]});save();render();}
+function delDay(di){state.days.splice(di,1);save();render();}
+
+function makeShareText(){
+  var L=[];var m=state.meta;
+  L.push('【'+m.title+'】','📅 '+m.sub,'');
+  L.push('🚗 去程：'+state.transport.outbound.lines.join('；'));
+  L.push('🚗 返程：'+state.transport.ret.lines.join('；'));
+  L.push('🗺️ 路线：'+state.transport.route,'');
+  state.days.forEach(function(d){
+    L.push('— '+d.name+'（'+d.date+'·'+d.theme+'）—');
+    d.items.forEach(function(it){L.push('  '+it.time+' '+it.title+(it.desc?'：'+it.desc:''));});
+    L.push('');
+  });
+  L.push('📌 预约待办：');
+  state.bookings.forEach(function(b){if(!b.done)L.push('  □ '+(b.urgent?'[紧急] ':'')+b.text);});
+  L.push('','💰 主要花费：');
+  state.budget.forEach(function(r){L.push('  '+r.name+'：'+r.price+'（'+r.note+'）');});
+  return L.join('\n');
+}
+
+/* ---------- events ---------- */
+function wire(){
+  $id('btn-edit').addEventListener('click',function(){editing=!editing;render();});
+  $id('btn-data').addEventListener('click',function(){$id('mask').classList.add('show');});
+  $id('sheet-close').addEventListener('click',function(){$id('mask').classList.remove('show');});
+  $id('mask').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+  document.querySelectorAll('#tabs button').forEach(function(b){
+    b.addEventListener('click',function(){tab=b.dataset.tab;render();});
+  });
+
+  $id('act-copy').addEventListener('click',function(){
+    var txt=makeShareText();
+    function ok(){toast('已复制，去微信/备忘录粘贴吧');$id('mask').classList.remove('show');}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok,function(){fallbackCopy(txt,ok);});
+    }else fallbackCopy(txt,ok);
+  });
+  $id('act-export').addEventListener('click',function(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=(state.meta.title||'旅游攻略').replace(/[\\/:*?"<>|]/g,'-')+'备份.json';a.click();URL.revokeObjectURL(a.href);
+    toast('已导出备份文件');$id('mask').classList.remove('show');
+  });
+  $id('act-import').addEventListener('click',function(){$id('file-import').click();$id('mask').classList.remove('show');});
+  $id('file-import').addEventListener('change',function(){
+    var f=this.files[0];if(!f)return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{var o=JSON.parse(rd.result);if(!o.meta)throw 0;
+        state=o;save();render();toast('导入成功 ✓');}catch(e){toast('文件格式不对');}
+    };
+    rd.readAsText(f);this.value='';
+  });
+  $id('act-reset').addEventListener('click',function(){
+    if(confirm('确定恢复为默认攻略？当前所有修改将被清空。')){
+      state=JSON.parse(JSON.stringify(DEFAULT));save();render();
+      toast('已恢复默认攻略');$id('mask').classList.remove('show');
+    }
+  });
+
+  $id('main').addEventListener('click',function(e){
+    var t=e.target.closest('[data-act]');
+    if(!t)return;
+    var act=t.dataset.act,di=+t.dataset.day,ii=+t.dataset.idx;
+    if(act==='up')updown(di,ii,-1);
+    else if(act==='down')updown(di,ii,1);
+    else if(act==='del')delItem(di,ii);
+    else if(act==='additem')addItem(di);
+    else if(act==='delday'){if(confirm('删除这一天？'))delDay(di);}
+    else if(act==='addday')addDay();
+    else if(act==='bk'){state.bookings[ii].done=t.checked;save();render();}
+    else if(act==='bkurg'){state.bookings[ii].urgent=!state.bookings[ii].urgent;save();render();}
+    else if(act==='bkdel'){state.bookings.splice(ii,1);save();render();}
+    else if(act==='bkadd'){state.bookings.push({text:'新待办',done:false,urgent:false});save();render();}
+    else if(act==='budel'){state.budget.splice(ii,1);save();render();}
+    else if(act==='buadd'){state.budget.push({name:'新项目',price:'0',note:''});save();render();}
+    else if(act==='tipdel'){state.tips.splice(ii,1);save();render();}
+    else if(act==='tipadd'){state.tips.push('新贴士');save();render();}
+  });
+
+  $id('main').addEventListener('input',function(e){
+    var t=e.target;if(!t.dataset||(!t.dataset.f&&!t.dataset.meta))return;
+    var f=t.dataset.f;
+    if(t.dataset.meta){state.meta[t.dataset.meta]=t.value;$id('app-title').textContent=state.meta.title;$id('app-sub').textContent=state.meta.sub;}
+    else if(t.dataset.day!==undefined){
+      var d=state.days[+t.dataset.day];
+      if(t.dataset.idx!==undefined){d.items[+t.dataset.idx][f]=t.value;}
+      else d[f]=t.value;
+    }
+    else if(t.dataset.tr!==undefined){
+      if(f==='lines'){state.transport[t.dataset.tr].lines=t.value.split('\n');}
+      else state.transport[t.dataset.tr][f]=t.value;
+    }
+    else if(t.dataset.bk!==undefined){state.bookings[+t.dataset.bk][f]=t.value;}
+    else if(t.dataset.bu!==undefined){state.budget[+t.dataset.bu][f]=t.value;}
+    else if(t.dataset.tip!==undefined){state.tips[+t.dataset.tip]=t.value;}
+    save();
+  });
+}
+
+function fallbackCopy(txt,ok){
+  var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');ok();}catch(e){toast('复制失败，请手动长按选择复制');}
+  document.body.removeChild(ta);
+}
+
+/* ---------- boot ---------- */
+state=load();
+wire();
+render();
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+})();
+</script>
+</body>
+</html>

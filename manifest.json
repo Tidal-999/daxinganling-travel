@@ -1,0 +1,16 @@
+{
+  "name": "大兴安岭赏秋攻略",
+  "short_name": "大兴安岭攻略",
+  "description": "大兴安岭赏秋 7天自驾路书 · 可随时编辑的旅行攻略",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ec",
+  "theme_color": "#c0352e",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
