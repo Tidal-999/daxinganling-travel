@@ -126,6 +126,8 @@
   .kpi .l{font-size:11px;color:var(--mut);}
   .bottom-fab{position:fixed;right:16px;bottom:84px;z-index:30;display:none;}
   .bottom-fab.show{display:block;}
+  .bottom-fab#btn-savecloud{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:0;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;box-shadow:0 6px 18px rgba(22,163,74,.45);cursor:pointer;}
+  .bottom-fab#btn-savecloud:active{transform:scale(.96);}
 </style>
 </head>
 <body>
@@ -148,6 +150,8 @@
   <main id="main"></main>
 </div>
 
+<button class="bottom-fab" id="btn-savecloud">☁️ 保存到云端</button>
+
 <div class="mask" id="mask">
   <div class="sheet">
     <button class="x" id="sheet-close">✕</button>
@@ -156,6 +160,7 @@
     <button id="act-export">⬇️ 导出备份 JSON 文件</button>
     <button id="act-import">⬆️ 导入备份 JSON 文件</button>
     <button id="act-share">📤 导出 data.json（更新网址用）</button>
+    <button id="act-savecloud">☁️ 立即保存到云端（所有人立即可见）</button>
     <button id="act-pull">🌐 从线上拉取最新攻略</button>
     <input id="gh-token" class="inp" type="password" placeholder="GitHub 令牌（可选，仅存本机，用于☁️同步）" style="margin-bottom:8px" autocomplete="off">
     <button id="act-sync">☁️ 保存并同步到线上（约1分钟，所有人打开网址即新版）</button>
@@ -743,6 +748,7 @@ function render(){
   var be=$id('btn-edit');
   be.textContent=editing?'✔️ 完成':'✏️ 编辑';
   be.classList.toggle('on',editing);
+  $id('btn-savecloud').classList.toggle('show',editing);
   document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.tab===tab);});
   if(tab==='trip')renderTrip();else if(tab==='transport')renderTransport();
   else if(tab==='book')renderBook();else if(tab==='budget')renderBudget();else renderTips();
@@ -907,6 +913,14 @@ function addItem(di){state.days[di].items.push({time:'00:00',title:'新安排',d
 function addDay(){state.days.push({id:'d'+Date.now(),name:'DAY '+(state.days.length+1),date:'新日期',tagline:'',theme:'',cls:'d4',items:[{time:'00:00',title:'新安排',desc:'',cat:'move'}]});save();render();}
 function delDay(di){state.days.splice(di,1);save();render();}
 
+function saveCloud(){
+  try{state.meta.syncAt=Date.now();persist();}catch(e){}
+  if(cloudTimer){clearTimeout(cloudTimer);cloudTimer=null;}
+  toast('☁️ 正在保存到云端...');
+  fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)})
+  .then(function(r){if(!r.ok)throw 0;toast('✅ 已保存到云端，所有人打开网址即最新版');})
+  .catch(function(){toast('⚠️ 云端暂不可用，修改已保存在本地');});
+}
 function makeShareText(){
   var L=[];var m=state.meta;
   L.push('【'+m.title+'】','📅 '+m.sub,'');
@@ -928,6 +942,7 @@ function makeShareText(){
 /* ---------- events ---------- */
 function wire(){
   $id('btn-edit').addEventListener('click',function(){editing=!editing;render();});
+  $id('btn-savecloud').addEventListener('click',function(){saveCloud();});
   $id('btn-data').addEventListener('click',function(){try{$id('gh-token').value=localStorage.getItem('csl_gh_token')||'';}catch(e){};$id('mask').classList.add('show');});
   $id('sheet-close').addEventListener('click',function(){$id('mask').classList.remove('show');});
   $id('mask').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
@@ -963,6 +978,7 @@ function wire(){
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='data.json';a.click();URL.revokeObjectURL(a.href);
     toast('已导出 data.json（上传到仓库即可更新网址）');$id('mask').classList.remove('show');
   });
+  $id('act-savecloud').addEventListener('click',function(){saveCloud();$id('mask').classList.remove('show');});
   $id('act-pull').addEventListener('click',function(){$id('mask').classList.remove('show');cloudPull(true);});
   $id('act-sync').addEventListener('click',function(){
     var token=($id('gh-token').value||'').trim();
