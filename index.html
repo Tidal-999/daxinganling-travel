@@ -86,6 +86,19 @@
   .map-drawer summary::-webkit-details-marker{display:none;}
   .map-drawer[open] summary{margin-bottom:8px;}
   .map-drawer svg{display:block;}
+  .navlink{display:block;text-align:center;background:#eef4ff;color:#2563eb;border:1px solid #c7d2fe;border-radius:10px;padding:9px;font-size:13px;font-weight:600;text-decoration:none;margin-top:2px;}
+  .navlink:active{background:#dbe7ff;}
+  .day-done{margin-left:auto;flex:none;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:3px 11px;font-size:11.5px;cursor:pointer;}
+  .day-done.on{background:#22c55e;border-color:#22c55e;font-weight:600;}
+  .syncbadge{display:inline-block;margin:8px 16px 0;font-size:11px;color:#fff;background:rgba(255,255,255,.15);border-radius:999px;padding:2px 10px;}
+  .syncbadge.ok{background:rgba(34,197,94,.85);}
+  .syncbadge.err{background:rgba(220,38,38,.85);}
+  .progrow{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .progress{flex:1;height:8px;background:#ece6dc;border-radius:999px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:999px;transition:width .4s;}
+  .prog-pct{font-size:12px;color:var(--mut);font-weight:600;min-width:34px;text-align:right;}
+  .budget-total b{font-size:15px;color:var(--red);}
+  @media (max-width:430px){.day-head .theme{display:none;}}
   /* edit mode */
   .edit-note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
     padding:8px 12px;font-size:12px;margin-bottom:12px;}
@@ -139,6 +152,7 @@
       <button class="h-btn" id="btn-edit">✏️ 编辑</button>
     </div>
     <p id="app-sub"></p>
+    <span class="syncbadge" id="sync-badge">☁️ 同步中…</span>
   </header>
   <nav class="tabs" id="tabs">
     <button data-tab="trip" class="on"><span class="ic">🗓️</span>行程</button>
@@ -166,6 +180,7 @@
     <button id="act-sync">☁️ 保存并同步到线上（约1分钟，所有人打开网址即新版）</button>
     <div class="note" style="margin-top:4px;font-size:11.5px;color:#6b7280">📖 说明：令牌在 GitHub → Settings → Developer settings → Personal access tokens 里生成（只勾选该仓库 Contents 读写权限）；它只保存在你手机本地，不会上传到网页。没有令牌也能正常查看和本地编辑。</div>
     <button id="act-reset">🔄 恢复为默认攻略</button>
+    <div class="note" style="margin-top:6px;font-size:11px;color:#9ca3af">版本 v1.2 · 更新于 2026-08-02 · 若功能非最新请下拉刷新</div>
     <div class="note" style="margin-top:4px;font-size:11.5px;color:#6b7280">☁️ 已开启自动云同步：任何人在网页里编辑，约3秒后自动保存到云端；所有人打开/刷新网页（或等待约60秒自动刷新）即可看到最新版。<br>📤 GitHub 方式（可选）：改好后点「导出 data.json」上传到仓库（Add file → Upload files），约1分钟生效；不便操作可把 data.json 发给 Codex 代传。</div>
   </div>
 </div>
@@ -658,17 +673,22 @@ var cloudTimer=null;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,3000);}
 var lastCloudErr=0;
+function setSync(txt,cls){var b=$id('sync-badge');if(!b)return;b.textContent=txt;b.className='syncbadge'+(cls?' '+cls:'');}
 function cloudPush(){
   cloudTimer=null;
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
   var body=JSON.stringify(state),attempts=0;
+  setSync('☁️ 同步中…');
   function tryPush(){
     attempts++;
     fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:body})
-    .then(function(r){if(!r.ok)throw 0;})
+    .then(function(r){if(!r.ok)throw 0;setSync('✅ 已同步','ok');})
     .catch(function(){
       if(attempts<2){setTimeout(tryPush,2000);}
-      else if(Date.now()-lastCloudErr>60000){lastCloudErr=Date.now();toast('⚠️ 云端暂不可用，修改已保存在本地');}
+      else{
+        setSync('⚠️ 离线','err');
+        if(Date.now()-lastCloudErr>60000){lastCloudErr=Date.now();toast('⚠️ 云端暂不可用，修改已保存在本地');}
+      }
     });
   }
   tryPush();
@@ -684,7 +704,8 @@ function cloudPull(force){
       persist();render();
       if(force)toast('✅ 已更新为云端最新版');
     }else if(force){toast('已是最新版本');}
-  }).catch(function(){if(force)toast('⚠️ 云端暂时无法连接');});
+    setSync('✅ 已同步','ok');
+  }).catch(function(){setSync('⚠️ 离线','err');if(force)toast('⚠️ 云端暂时无法连接');});
 }
 function $id(x){return document.getElementById(x);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -762,14 +783,18 @@ function renderTrip(){
       +'<input class="inp" data-meta="title" value="'+esc(state.meta.title)+'" placeholder="攻略标题">'
       +'<input class="inp" data-meta="sub" value="'+esc(state.meta.sub)+'" placeholder="副标题"></div></div>';
   }
-  h+='<div class="kpi"><div class="card"><div class="n">'+state.days.length+'</div><div class="l">天行程</div></div>'
+  var doneDays=state.days.filter(function(d){return d.done;}).length,pct=state.days.length?Math.round(doneDays/state.days.length*100):0;
+  h+='<div class="kpi"><div class="card"><div class="n">'+doneDays+'/'+state.days.length+'</div><div class="l">天已完成</div></div>'
     +'<div class="card"><div class="n">'+countItems()+'</div><div class="l">个安排</div></div>'
     +'<div class="card"><div class="n">'+state.bookings.filter(function(b){return !b.done;}).length+'</div><div class="l">待办</div></div></div>';
+  h+='<div class="progrow"><div class="progress"><div class="progress-bar" style="width:'+pct+'%"></div></div><span class="prog-pct">'+pct+'%</span></div>';
   if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapSvg(0,true)+'<div class="note">海拉尔 → 阿尔山 · 全程约1800km · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
   if(state.meta.alert)h+='<div class="urgent">'+state.meta.alert+'</div>';
   state.days.forEach(function(d,di){
     h+='<div class="day"><div class="day-head '+d.cls+'"><div><div class="dt">'+esc(d.name)+'</div><div class="ds">'+esc(d.date)+' · '+esc(d.tagline)+'</div></div>'
-      +'<div class="theme">'+esc(d.theme)+'</div></div>';
+      +'<div class="theme">'+esc(d.theme)+'</div>'
+      +(editing?'':'<button class="day-done'+(d.done?' on':'')+'" data-act="daydone" data-day="'+di+'">'+(d.done?'✔ 已完成':'✓ 标记完成')+'</button>')
+      +'</div>';
     if(editing){
       h+='<div class="day-edit">'
         +'<div class="edit-head"><input class="inp" data-day="'+di+'" data-f="name" value="'+esc(d.name)+'" placeholder="名称"><input class="inp" data-day="'+di+'" data-f="date" value="'+esc(d.date)+'" placeholder="日期"></div>'
@@ -802,6 +827,11 @@ function renderTrip(){
     });
     h+='</div>';
     if(editing)h+='<div style="padding:0 12px 12px"><button class="add-btn" data-act="additem" data-day="'+di+'">＋ 添加安排</button></div>';
+    if(!editing&&state.map&&state.map.segments[di]){
+      var sg=state.map.segments[di],fn=sg.route[0],tn=sg.route[sg.route.length-1];
+      var href=fn===tn?('https://uri.amap.com/search?keyword='+encodeURIComponent('阿尔山国家森林公园')):('https://uri.amap.com/direction?from='+encodeURIComponent(fn)+'&to='+encodeURIComponent(tn)+'&mode=car&callnative=1');
+      h+='<div style="padding:0 12px 10px"><a class="navlink" target="_blank" rel="noopener" href="'+href+'">🚗 导航本段路线（高德地图）</a></div>';
+    }
     if(editing&&state.days.length>1)h+='<div style="padding:0 12px 12px"><button class="add-btn" style="border-color:#fecaca;color:var(--hot)" data-act="delday" data-day="'+di+'">删除这一天</button></div>';
     h+='</div>';
   });
@@ -865,6 +895,12 @@ function renderBook(){
 function renderBudget(){
   var h='';
   if(editing)h+='<div class="edit-note">编辑模式：修改会自动保存。</div>';
+  var bsum=0,bcnt=0;
+  state.budget.forEach(function(r){
+    var nums=String(r.price||'').match(/\d+(\.\d+)?/g);
+    if(nums&&nums.length){var v=parseFloat(nums[0]);if(nums.length>1)v=(v+parseFloat(nums[1]))/2;bsum+=v;bcnt++;}
+  });
+  h+='<div class="card budget-total"><b>💰 估算合计：约 ¥'+Math.round(bsum)+'</b><div class="note">按'+bcnt+'项费用的中间值估算（"免费"等无数字项不计入），仅供参考</div></div>';
   h+='<div class="card" style="padding:0;overflow:hidden"><table><tr><th>项目</th><th>费用</th><th>说明</th></tr>';
   state.budget.forEach(function(r,i){
     if(editing){
@@ -916,10 +952,11 @@ function delDay(di){state.days.splice(di,1);save();render();}
 function saveCloud(){
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
   if(cloudTimer){clearTimeout(cloudTimer);cloudTimer=null;}
+  setSync('☁️ 同步中…');
   toast('☁️ 正在保存到云端...');
   fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)})
-  .then(function(r){if(!r.ok)throw 0;toast('✅ 已保存到云端，所有人打开网址即最新版');})
-  .catch(function(){toast('⚠️ 云端暂不可用，修改已保存在本地');});
+  .then(function(r){if(!r.ok)throw 0;setSync('✅ 已同步','ok');toast('✅ 已保存到云端，所有人打开网址即最新版');})
+  .catch(function(){setSync('⚠️ 离线','err');toast('⚠️ 云端暂不可用，修改已保存在本地');});
 }
 function makeShareText(){
   var L=[];var m=state.meta;
@@ -1013,6 +1050,7 @@ function wire(){
     else if(act==='additem')addItem(di);
     else if(act==='delday'){if(confirm('删除这一天？'))delDay(di);}
     else if(act==='addday')addDay();
+    else if(act==='daydone'){state.days[di].done=!state.days[di].done;save();render();}
     else if(act==='bk'){state.bookings[ii].done=t.checked;save();render();}
     else if(act==='bkurg'){state.bookings[ii].urgent=!state.bookings[ii].urgent;save();render();}
     else if(act==='bkdel'){state.bookings.splice(ii,1);save();render();}
