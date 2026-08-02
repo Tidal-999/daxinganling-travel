@@ -81,6 +81,11 @@
   .list-row.done .bk-t{text-decoration:line-through;color:var(--mut);}
   .bk-t{flex:1;min-width:0;}
   .bk-u{flex:none;font-size:10px;color:var(--hot);border:1px solid #fca5a5;border-radius:6px;padding:0 5px;}
+  .map-drawer{margin:2px 12px 10px;}
+  .map-drawer summary{cursor:pointer;font-size:12.5px;font-weight:600;color:#475569;padding:7px 10px;background:#f6f1e9;border-radius:9px;list-style:none;user-select:none;}
+  .map-drawer summary::-webkit-details-marker{display:none;}
+  .map-drawer[open] summary{margin-bottom:8px;}
+  .map-drawer svg{display:block;}
   /* edit mode */
   .edit-note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
     padding:8px 12px;font-size:12px;margin-bottom:12px;}
@@ -194,6 +199,139 @@ var DEFAULT=
       "包车/跟团：省心省力，适合不想开长途的伙伴"
     ],
     "compareNote": "当地租车多支持异地还车（如海拉尔取、阿尔山还）"
+  },
+  "map": {
+    "points": {
+      "海拉尔": [
+        560,
+        540
+      ],
+      "莫日格勒河": [
+        480,
+        500
+      ],
+      "额尔古纳": [
+        640,
+        390
+      ],
+      "根河": [
+        790,
+        300
+      ],
+      "莫尔道嘎": [
+        680,
+        245
+      ],
+      "室韦/临江": [
+        560,
+        175
+      ],
+      "九卡": [
+        515,
+        235
+      ],
+      "七卡": [
+        478,
+        295
+      ],
+      "五卡": [
+        452,
+        345
+      ],
+      "黑山头": [
+        435,
+        370
+      ],
+      "满洲里": [
+        165,
+        460
+      ],
+      "阿尔山": [
+        470,
+        800
+      ],
+      "驼峰岭天池": [
+        545,
+        755
+      ],
+      "杜鹃湖": [
+        410,
+        745
+      ]
+    },
+    "segments": [
+      {
+        "label": "DAY 1",
+        "color": "#2563eb",
+        "route": [
+          "海拉尔",
+          "莫日格勒河",
+          "额尔古纳"
+        ],
+        "km": "150km · 3h"
+      },
+      {
+        "label": "DAY 2",
+        "color": "#16a34a",
+        "route": [
+          "额尔古纳",
+          "根河"
+        ],
+        "km": "130km · 2h"
+      },
+      {
+        "label": "DAY 3",
+        "color": "#ea580c",
+        "route": [
+          "根河",
+          "莫尔道嘎",
+          "室韦/临江"
+        ],
+        "km": "230km · 4h"
+      },
+      {
+        "label": "DAY 4",
+        "color": "#7c3aed",
+        "route": [
+          "室韦/临江",
+          "九卡",
+          "七卡",
+          "五卡",
+          "黑山头"
+        ],
+        "km": "200km · 4h+"
+      },
+      {
+        "label": "DAY 5",
+        "color": "#db2777",
+        "route": [
+          "黑山头",
+          "满洲里"
+        ],
+        "km": "200km · 3h"
+      },
+      {
+        "label": "DAY 6",
+        "color": "#0d9488",
+        "route": [
+          "满洲里",
+          "阿尔山"
+        ],
+        "km": "430km · 5-6h"
+      },
+      {
+        "label": "DAY 7",
+        "color": "#64748b",
+        "route": [
+          "阿尔山",
+          "驼峰岭天池",
+          "杜鹃湖",
+          "阿尔山"
+        ],
+        "km": "公园内游览",
+        "dash": "7 6"
+      }
+    ]
   },
   "days": [
     {
@@ -503,7 +641,7 @@ var DEFAULT=
 }
 var state, editing=false, tab='trip';
 
-function load(){try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.meta)return o;}}catch(e){}return JSON.parse(JSON.stringify(DEFAULT));}
+function load(){var d=JSON.parse(JSON.stringify(DEFAULT));try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.meta){if(!o.map)o.map=d.map;return o;}}}catch(e){}return d;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function $id(x){return document.getElementById(x);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -511,6 +649,55 @@ function catName(c){return {tra:'交通',sight:'景点',food:'美食',shop:'购�
 function catTag(c){return '<span class="tag t-'+c+'">'+catName(c)+'</span>';}
 function toast(msg){var t=$id('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},1800);}
 
+
+function polySvg(seg,pts,color,w,dash){
+  var d='';
+  seg.route.forEach(function(n,i){var p=pts[n];d+=(i?'L':'M')+p[0]+' '+p[1]+' ';});
+  return '<path d="'+d.trim()+'" fill="none" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>';
+}
+function mapSvg(segIdx,isTotal){
+  var m=state.map||DEFAULT.map,pts=m.points,W=920,H=880,names=Object.keys(pts);
+  var h='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:#fffdf9;border-radius:10px">';
+  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="#fffdf9"/>';
+  if(isTotal){
+    h+='<path d="M575 150 L530 215 L490 280 L460 340 L452 372" fill="none" stroke="#60a5fa" stroke-width="3" stroke-dasharray="6 5"/>';
+    h+='<text x="462" y="398" font-size="12" fill="#3b82f6">额尔古纳河（中俄界河）</text>';
+    h+='<text x="812" y="148" font-size="20" fill="#9ca3af">俄</text><text x="812" y="172" font-size="20" fill="#9ca3af">罗</text><text x="812" y="196" font-size="20" fill="#9ca3af">斯</text>';
+    h+='<text x="300" y="660" font-size="15" fill="#84cc16" opacity=".85">呼伦贝尔草原</text>';
+    h+='<text x="24" y="40" font-size="15" font-weight="600" fill="#374151">7天总路线 · 全程约1800km</text>';
+    h+='<text x="24" y="62" font-size="12" fill="#6b7280">海拉尔出发 → 阿尔山结束（示意图，非精确比例）</text>';
+  } else {
+    var cur=m.segments[segIdx];
+    h+='<text x="24" y="40" font-size="14" font-weight="600" fill="'+cur.color+'">'+cur.label+' · '+cur.km+'</text>';
+  }
+  h+='<g opacity=".3">';
+  m.segments.forEach(function(s){h+=polySvg(s,pts,'#9ca3af',3,s.dash||null);});
+  h+='</g>';
+  if(isTotal){m.segments.forEach(function(s){h+=polySvg(s,pts,s.color,5,s.dash||null);});}
+  else{var cur2=m.segments[segIdx];h+=polySvg(cur2,pts,cur2.color,5,cur2.dash||null);}
+  var startN=(isTotal?m.segments[0]:m.segments[segIdx]).route[0];
+  var endSeg=isTotal?m.segments[m.segments.length-1]:m.segments[segIdx];
+  var endN=endSeg.route[endSeg.route.length-1];
+  names.forEach(function(n){
+    var p=pts[n];
+    h+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="#fff" stroke="#6b7280" stroke-width="2"/>';
+    if(p[0]>750){h+='<text x="'+(p[0]-9)+'" y="'+(p[1]+4)+'" font-size="13" fill="#374151" text-anchor="end">'+n+'</text>';}
+    else{h+='<text x="'+(p[0]+9)+'" y="'+(p[1]+4)+'" font-size="13" fill="#374151">'+n+'</text>';}
+  });
+  var sp=pts[startN],ep=pts[endN];
+  if(startN!==endN)h+='<circle cx="'+sp[0]+'" cy="'+sp[1]+'" r="11" fill="#16a34a" stroke="#fff" stroke-width="2.5"/><text x="'+sp[0]+'" y="'+(sp[1]+4)+'" font-size="11" fill="#fff" text-anchor="middle">起</text>';
+  h+='<circle cx="'+ep[0]+'" cy="'+ep[1]+'" r="11" fill="#dc2626" stroke="#fff" stroke-width="2.5"/><text x="'+ep[0]+'" y="'+(ep[1]+4)+'" font-size="11" fill="#fff" text-anchor="middle">终</text>';
+  if(isTotal){
+    var lx=24;
+    m.segments.forEach(function(sg,i){
+      h+='<line x1="'+lx+'" x2="'+(lx+36)+'" y1="816" y2="816" stroke="'+sg.color+'" stroke-width="5" stroke-linecap="round"/>';
+      h+='<text x="'+(lx+42)+'" y="821" font-size="12" fill="#374151">'+(i+1)+'</text>';
+      lx+=78;
+    });
+  }
+  h+='</svg>';
+  return h;
+}
 /* ---------- render ---------- */
 function render(){
   $id('app-title').textContent=state.meta.title;
@@ -534,6 +721,7 @@ function renderTrip(){
   h+='<div class="kpi"><div class="card"><div class="n">'+state.days.length+'</div><div class="l">天行程</div></div>'
     +'<div class="card"><div class="n">'+countItems()+'</div><div class="l">个安排</div></div>'
     +'<div class="card"><div class="n">'+state.bookings.filter(function(b){return !b.done;}).length+'</div><div class="l">待办</div></div></div>';
+  if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapSvg(0,true)+'<div class="note">海拉尔 → 阿尔山 · 全程约1800km · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
   if(state.meta.alert)h+='<div class="urgent">'+state.meta.alert+'</div>';
   state.days.forEach(function(d,di){
     h+='<div class="day"><div class="day-head '+d.cls+'"><div><div class="dt">'+esc(d.name)+'</div><div class="ds">'+esc(d.date)+' · '+esc(d.tagline)+'</div></div>'
@@ -546,6 +734,7 @@ function renderTrip(){
         +['d1','d2','d3','d4','d5','d6','d7'].map(function(c){return '<option value="'+c+'"'+(d.cls===c?' selected':'')+'>DAY'+(parseInt(c[1])||1)+' 配色</option>';}).join('')
         +'</select></div>';
     }
+    if(state.map&&state.map.segments[di])h+='<details class="map-drawer" open><summary>🗺️ 当日路线图 · '+esc(d.name)+'</summary>'+mapSvg(di,false)+'</details>';
     h+='<div class="tl">';
     d.items.forEach(function(it,ii){
       h+='<div class="item"><span class="dot t-'+it.cat+'"></span><div class="time">'+esc(it.time)+'</div><div>';
