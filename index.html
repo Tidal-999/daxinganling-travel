@@ -161,7 +161,7 @@
     <button id="act-sync">☁️ 保存并同步到线上（约1分钟，所有人打开网址即新版）</button>
     <div class="note" style="margin-top:4px;font-size:11.5px;color:#6b7280">📖 说明：令牌在 GitHub → Settings → Developer settings → Personal access tokens 里生成（只勾选该仓库 Contents 读写权限）；它只保存在你手机本地，不会上传到网页。没有令牌也能正常查看和本地编辑。</div>
     <button id="act-reset">🔄 恢复为默认攻略</button>
-    <div class="note" style="margin-top:4px;font-size:11.5px;color:#6b7280">💡 想让别人改的内容同步到网址？改好后点「导出 data.json」，把该文件上传到 GitHub 仓库根目录（Add file → Upload files），等约1分钟，所有人打开网址就是新版；不便操作可直接把 data.json 发给 Codex 代传。</div>
+    <div class="note" style="margin-top:4px;font-size:11.5px;color:#6b7280">☁️ 已开启自动云同步：任何人在网页里编辑，约3秒后自动保存到云端；所有人打开/刷新网页（或等待约60秒自动刷新）即可看到最新版。<br>📤 GitHub 方式（可选）：改好后点「导出 data.json」上传到仓库（Add file → Upload files），约1分钟生效；不便操作可把 data.json 发给 Codex 代传。</div>
   </div>
 </div>
 <input type="file" id="file-import" accept=".json,application/json" hidden>
@@ -171,6 +171,7 @@
 (function(){
 'use strict';
 var KEY='csl-travel-app-v1';
+var CLOUD='https://jsonblob.com/api/jsonBlob/019fc2aa-8ffc-758f-bcc0-f51179dc21f5';
 
 var DEFAULT=
 {
@@ -648,7 +649,26 @@ var DEFAULT=
 var state, editing=false, tab='trip';
 
 function load(){var d=JSON.parse(JSON.stringify(DEFAULT));try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.meta){if(!o.map)o.map=d.map;return o;}}}catch(e){}return d;}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+var cloudTimer=null;
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,3000);}
+function cloudPush(){
+  cloudTimer=null;
+  try{state.meta.syncAt=Date.now();persist();}catch(e){}
+  fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}).catch(function(){});
+}
+function cloudPull(){
+  return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+    if(!d||!d.meta||!d.days)throw 0;
+    var ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
+    var mine=state.meta.syncAt||0,theirs=d.meta.syncAt||0;
+    if(theirs>mine){
+      state=JSON.parse(JSON.stringify(d));
+      if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
+      persist();render();
+    }
+  }).catch(function(){});
+}
 function $id(x){return document.getElementById(x);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function catName(c){return {tra:'交通',sight:'景点',food:'美食',shop:'购物',stay:'住宿',move:'移动'}[c]||c;}
@@ -1025,6 +1045,8 @@ function seedOnline(){
   }).catch(function(){});
 }
 seedOnline();
+cloudPull();
+setInterval(cloudPull,60000);
 })();
 </script>
 </body>
