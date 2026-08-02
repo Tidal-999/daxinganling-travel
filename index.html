@@ -190,7 +190,7 @@
 <script>
 (function(){
 'use strict';
-var KEY='csl-travel-app-v1';
+var KEY='csl-app-khingan-v1';
 var CLOUD='https://jsonblob.com/api/jsonBlob/019fc2aa-8ffc-758f-bcc0-f51179dc21f5';
 
 var DEFAULT=
@@ -685,7 +685,7 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e)
 function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,3000);}
 var lastCloudErr=0;
 function setSync(txt,cls){var b=$id('sync-badge');if(!b)return;b.textContent=txt;b.className='syncbadge'+(cls?' '+cls:'');}
-function markLm(r){try{var lm=r.headers.get('Last-Modified');if(lm)localStorage.setItem('csl_lm',lm);}catch(e){}}
+function markLm(r){try{var lm=r.headers.get('Last-Modified');if(lm)localStorage.setItem('csl_lm_khingan',lm);}catch(e){}}
 function cloudPush(){
   cloudTimer=null;
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
@@ -709,13 +709,13 @@ function cloudPull(force){
   return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;var lm=r.headers.get('Last-Modified');return r.json().then(function(d){return {d:d,lm:lm};});}).then(function(o){
     var d=o.d;if(!d||!d.meta||!d.days)throw 0;
     var ae=document.activeElement;if(!force&&ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
-    var stored=null;try{stored=localStorage.getItem('csl_lm');}catch(e){}
+    var stored=null;try{stored=localStorage.getItem('csl_lm_khingan');}catch(e){}
     var mine=state.meta.syncAt||0,theirs=d.meta.syncAt||0;
     if(force||(o.lm&&(!stored||o.lm>stored))||theirs>mine){
       state=JSON.parse(JSON.stringify(d));
       if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
       persist();
-      if(o.lm){try{localStorage.setItem('csl_lm',o.lm);}catch(e){}}
+      if(o.lm){try{localStorage.setItem('csl_lm_khingan',o.lm);}catch(e){}}
       render();
       if(force)toast('✅ 已更新为云端最新版');
     }else if(force){toast('已是最新版本');}
