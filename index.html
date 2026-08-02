@@ -674,6 +674,7 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e)
 function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,3000);}
 var lastCloudErr=0;
 function setSync(txt,cls){var b=$id('sync-badge');if(!b)return;b.textContent=txt;b.className='syncbadge'+(cls?' '+cls:'');}
+function markLm(r){try{var lm=r.headers.get('Last-Modified');if(lm)localStorage.setItem('csl_lm',lm);}catch(e){}}
 function cloudPush(){
   cloudTimer=null;
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
@@ -682,7 +683,7 @@ function cloudPush(){
   function tryPush(){
     attempts++;
     fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:body})
-    .then(function(r){if(!r.ok)throw 0;setSync('✅ 已同步','ok');})
+    .then(function(r){if(!r.ok)throw 0;markLm(r);setSync('✅ 已同步','ok');})
     .catch(function(){
       if(attempts<2){setTimeout(tryPush,2000);}
       else{
@@ -694,14 +695,17 @@ function cloudPush(){
   tryPush();
 }
 function cloudPull(force){
-  return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
-    if(!d||!d.meta||!d.days)throw 0;
+  return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;var lm=r.headers.get('Last-Modified');return r.json().then(function(d){return {d:d,lm:lm};});}).then(function(o){
+    var d=o.d;if(!d||!d.meta||!d.days)throw 0;
     var ae=document.activeElement;if(!force&&ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
+    var stored=null;try{stored=localStorage.getItem('csl_lm');}catch(e){}
     var mine=state.meta.syncAt||0,theirs=d.meta.syncAt||0;
-    if(force||theirs>mine){
+    if(force||(o.lm&&(!stored||o.lm>stored))||theirs>mine){
       state=JSON.parse(JSON.stringify(d));
       if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
-      persist();render();
+      persist();
+      if(o.lm){try{localStorage.setItem('csl_lm',o.lm);}catch(e){}}
+      render();
       if(force)toast('✅ 已更新为云端最新版');
     }else if(force){toast('已是最新版本');}
     setSync('✅ 已同步','ok');
@@ -955,7 +959,7 @@ function saveCloud(){
   setSync('☁️ 同步中…');
   toast('☁️ 正在保存到云端...');
   fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)})
-  .then(function(r){if(!r.ok)throw 0;setSync('✅ 已同步','ok');toast('✅ 已保存到云端，所有人打开网址即最新版');})
+  .then(function(r){if(!r.ok)throw 0;markLm(r);setSync('✅ 已同步','ok');toast('✅ 已保存到云端，所有人打开网址即最新版');})
   .catch(function(){setSync('⚠️ 离线','err');toast('⚠️ 云端暂不可用，修改已保存在本地');});
 }
 function makeShareText(){
