@@ -286,7 +286,18 @@ var DEFAULT=
         745
       ]
     },
-    "segments": [
+    "title": "7天总路线 · 全程约1800km",
+  "sub": "海拉尔出发 → 阿尔山结束（示意图，非精确比例）",
+  "deco": {
+    "river": { "d": "M575 150 L530 215 L490 280 L460 340 L452 372", "label": "额尔古纳河（中俄界河）", "tx": 462, "ty": 398, "color": "#60a5fa" },
+    "labels": [
+      { "x": 812, "y": 148, "text": "俄", "size": 20 },
+      { "x": 812, "y": 172, "text": "罗", "size": 20 },
+      { "x": 812, "y": 196, "text": "斯", "size": 20 },
+      { "x": 300, "y": 660, "text": "呼伦贝尔草原", "size": 15, "color": "#84cc16", "op": 0.85 }
+    ]
+  },
+  "segments": [
       {
         "label": "DAY 1",
         "color": "#2563eb",
@@ -728,12 +739,10 @@ function mapSvg(segIdx,isTotal){
   var h='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:#fffdf9;border-radius:10px">';
   h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="#fffdf9"/>';
   if(isTotal){
-    h+='<path d="M575 150 L530 215 L490 280 L460 340 L452 372" fill="none" stroke="#60a5fa" stroke-width="3" stroke-dasharray="6 5"/>';
-    h+='<text x="462" y="398" font-size="12" fill="#3b82f6">额尔古纳河（中俄界河）</text>';
-    h+='<text x="812" y="148" font-size="20" fill="#9ca3af">俄</text><text x="812" y="172" font-size="20" fill="#9ca3af">罗</text><text x="812" y="196" font-size="20" fill="#9ca3af">斯</text>';
-    h+='<text x="300" y="660" font-size="15" fill="#84cc16" opacity=".85">呼伦贝尔草原</text>';
-    h+='<text x="24" y="40" font-size="15" font-weight="600" fill="#374151">7天总路线 · 全程约1800km</text>';
-    h+='<text x="24" y="62" font-size="12" fill="#6b7280">海拉尔出发 → 阿尔山结束（示意图，非精确比例）</text>';
+    if(m.deco&&m.deco.river)h+='<path d="'+m.deco.river.d+'" fill="none" stroke="'+(m.deco.river.color||'#60a5fa')+'" stroke-width="3" stroke-dasharray="6 5"/><text x="'+(m.deco.river.tx||462)+'" y="'+(m.deco.river.ty||398)+'" font-size="12" fill="#3b82f6">'+m.deco.river.label+'</text>';
+    if(m.deco&&m.deco.labels)(m.deco.labels||[]).forEach(function(l){h+='<text x="'+l.x+'" y="'+l.y+'" font-size="'+(l.size||15)+'" fill="'+(l.color||'#9ca3af')+'" opacity="'+(l.op||1)+'">'+l.text+'</text>';});
+    h+='<text x="24" y="40" font-size="15" font-weight="600" fill="#374151">'+(m.title||'全程路线图')+'</text>';
+    h+='<text x="24" y="62" font-size="12" fill="#6b7280">'+(m.sub||'示意图，非精确比例')+'</text>';
   } else {
     var cur=m.segments[segIdx];
     h+='<text x="24" y="40" font-size="14" font-weight="600" fill="'+cur.color+'">'+cur.label+' · '+cur.km+'</text>';
@@ -792,7 +801,7 @@ function renderTrip(){
     +'<div class="card"><div class="n">'+countItems()+'</div><div class="l">个安排</div></div>'
     +'<div class="card"><div class="n">'+state.bookings.filter(function(b){return !b.done;}).length+'</div><div class="l">待办</div></div></div>';
   h+='<div class="progrow"><div class="progress"><div class="progress-bar" style="width:'+pct+'%"></div></div><span class="prog-pct">'+pct+'%</span></div>';
-  if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapSvg(0,true)+'<div class="note">海拉尔 → 阿尔山 · 全程约1800km · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
+  if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapSvg(0,true)+'<div class="note">'+(state.map.sub||'')+' · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
   if(state.meta.alert)h+='<div class="urgent">'+state.meta.alert+'</div>';
   state.days.forEach(function(d,di){
     h+='<div class="day"><div class="day-head '+d.cls+'"><div><div class="dt">'+esc(d.name)+'</div><div class="ds">'+esc(d.date)+' · '+esc(d.tagline)+'</div></div>'
