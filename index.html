@@ -240,20 +240,33 @@ var DEFAULT=
     "sub": "卫星风格 · 按真实经纬度绘制（示意路线，非精确比例）",
   "geo": {
     "regions": [
-      { "path": [[119.6,50.9],[121.0,50.3],[122.7,50.7],[122.7,52.4],[120.7,52.5],[119.7,51.7],[119.5,51.1]], "label": "大兴安岭林区", "lx": 121.5, "ly": 51.7, "color": "#d9e8cf", "op": 0.75 },
-      { "path": [[116.8,47.6],[120.4,47.7],[120.9,49.6],[119.8,50.3],[117.1,50.0],[116.5,48.7]], "label": "呼伦贝尔草原", "lx": 118.3, "ly": 49.1, "color": "#e9edc9", "op": 0.8 }
+      { "path": [[119.6,50.9],[121.0,50.3],[122.7,50.7],[122.7,52.4],[120.7,52.5],[119.7,51.7],[119.5,51.1]], "label": "大兴安岭林区", "lx": 121.5, "ly": 51.7, "color": "#2f4a28", "op": 0.75, "dots": true },
+      { "path": [[116.8,47.6],[120.4,47.7],[120.9,49.6],[119.8,50.3],[117.1,50.0],[116.5,48.7]], "label": "呼伦贝尔草原", "lx": 118.3, "ly": 49.1, "color": "#7d8f45", "op": 0.5, "fields": true }
     ],
     "lakes": [
       { "path": [[117.25,48.70],[117.38,48.92],[117.44,49.03],[117.47,48.92],[117.42,48.72],[117.30,48.66]], "label": "呼伦湖", "lx": 117.10, "ly": 48.86 },
       { "path": [[117.52,47.82],[117.62,47.94],[117.72,48.00],[117.70,47.90],[117.58,47.80]], "label": "贝尔湖", "lx": 117.46, "ly": 47.90 }
     ],
     "rivers": [
-      { "path": [[119.25,49.62],[119.55,49.42],[119.90,49.28],[120.25,49.22]], "label": "海拉尔河", "lx": 10, "ly": -8 }
+      { "path": [[119.25,49.62],[119.55,49.42],[119.90,49.28],[120.25,49.22]], "label": "海拉尔河", "lx": 10, "ly": -8 },
+      { "path": [[121.20,50.95],[121.53,50.78],[121.95,50.70]] },
+      { "path": [[120.45,51.25],[120.70,51.10],[120.95,50.98]] },
+      { "path": [[120.15,50.95],[120.45,50.75]] },
+      { "path": [[118.60,48.90],[118.95,48.75],[119.30,48.65]] }
+    ],
+    "roads": [
+      { "path": [[117.60,49.55],[118.60,49.38],[119.70,49.21]] },
+      { "path": [[119.36,50.20],[120.18,50.24]] },
+      { "path": [[120.70,51.10],[121.10,50.95],[121.53,50.78]] },
+      { "path": [[119.92,51.40],[120.70,51.10]] }
     ],
     "landmarks": [
       { "lon": 117.31, "lat": 49.62, "text": "满洲里口岸" },
       { "lon": 119.90, "lat": 51.33, "text": "室韦口岸" },
-      { "lon": 119.36, "lat": 50.18, "text": "黑山头口岸" }
+      { "lon": 119.36, "lat": 50.18, "text": "黑山头口岸" },
+      { "lon": 119.82, "lat": 49.21, "text": "呼伦贝尔机场" },
+      { "lon": 119.91, "lat": 47.31, "text": "阿尔山机场" },
+      { "lon": 117.30, "lat": 49.58, "text": "满洲里国门" }
     ]
   },
     "points": {
@@ -421,6 +434,8 @@ var DEFAULT=
         "ly": -10
       },
       "labels": [
+        { "lon": 120.15, "lat": 51.62, "text": "额尔古纳国家级自然保护区", "size": 11, "color": "#a8d8a0", "op": 0.8 },
+        { "lon": 120.18, "lat": 47.55, "text": "阿尔山火山群", "size": 11, "color": "#e0c9a0", "op": 0.8 },
         {
           "lon": 121,
           "lat": 51.6,
@@ -763,15 +778,34 @@ function save(){persist();if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setT
 var lastCloudErr=0;
 function setSync(txt,cls){var b=$id('sync-badge');if(!b)return;b.textContent=txt;b.className='syncbadge'+(cls?' '+cls:'');}
 function markLm(r){try{var lm=r.headers.get('Last-Modified');if(lm)localStorage.setItem('csl_lm_khingan',lm);}catch(e){}}
+function gzipB64(str){
+  if(typeof CompressionStream==='undefined')return Promise.resolve('p:'+str);
+  var bytes=new TextEncoder().encode(str);
+  var stream=new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Response(stream).arrayBuffer().then(function(buf){
+    var u8=new Uint8Array(buf),bin='';
+    for(var i=0;i<u8.length;i++){bin+=String.fromCharCode(u8[i]);}
+    return btoa(bin);
+  });
+}
+function gunzipB64(b64){
+  if(b64.indexOf('p:')===0)return Promise.resolve(b64.slice(2));
+  if(typeof DecompressionStream==='undefined')throw new Error('no gzip');
+  var bin=atob(b64),u8=new Uint8Array(bin.length),i;
+  for(i=0;i<bin.length;i++){u8[i]=bin.charCodeAt(i);}
+  var stream=new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Response(stream).arrayBuffer().then(function(buf){return new TextDecoder().decode(buf);});
+}
 function cloudPush(){
   cloudTimer=null;
   try{state.meta.syncAt=Date.now();persist();}catch(e){}
-  var body=JSON.stringify(state),attempts=0;
   setSync('☁️ 同步中…');
+  var attempts=0;
   function tryPush(){
     attempts++;
-    fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:body})
-    .then(function(r){if(!r.ok)throw 0;markLm(r);setSync('✅ 已同步','ok');})
+    gzipB64(JSON.stringify(state)).then(function(b64){
+      return fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({__g:'1',d:b64})});
+    }).then(function(r){if(!r.ok)throw 0;markLm(r);setSync('✅ 已同步','ok');})
     .catch(function(){
       if(attempts<2){setTimeout(tryPush,2000);}
       else{
@@ -784,7 +818,14 @@ function cloudPush(){
 }
 var lastCloudToast=0;
 function cloudPull(force){
-  return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;var lm=r.headers.get('Last-Modified');return r.json().then(function(d){return {d:d,lm:lm};});}).then(function(o){
+  return fetch(CLOUD,{cache:'no-store'}).then(function(r){
+    if(!r.ok)throw 0;
+    var lm=r.headers.get('Last-Modified');
+    return r.json().then(function(o){
+      if(o&&o.__g==='1'){return gunzipB64(o.d).then(function(t){return {d:JSON.parse(t),lm:lm};});}
+      return {d:o,lm:lm};
+    });
+  }).then(function(o){
     var d=o.d;if(!d||!d.meta||!d.days)throw 0;
     var ae=document.activeElement;if(!force&&ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
     var cur=JSON.stringify(state),next=JSON.stringify(d);
@@ -835,24 +876,37 @@ function mapSvg(segIdx,isTotal){
   function X(lon){return (lon-vLonMin)*sx;}
   function Y(lat){return (vLatMax-lat)*sx;}
   var uid=segIdx+''+(isTotal?'t':'d');
-  function labStyle(fill,size){return ' font-size="'+(size||13)+'" fill="'+fill+'" paint-order="stroke" stroke="rgba(18,26,18,0.78)" stroke-width="2.6"';}
+  function labStyle(fill,size){return ' font-size="'+(size||13)+'" fill="'+fill+'" paint-order="stroke" stroke="rgba(18,26,18,0.8)" stroke-width="2.6"';}
   var h='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:#26371f;border-radius:10px">';
-  h+='<defs><linearGradient id="g'+uid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#41593a"/><stop offset="0.55" stop-color="#364c30"/><stop offset="1" stop-color="#27371f"/></linearGradient>'
-    +'<filter id="f'+uid+'" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.017" numOctaves="3" seed="'+(3+segIdx)+'" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0.5 0.09  0 0 0 0.5 0.15  0 0 0 0.5 0.06  0 0 0 0.42 0"/></filter></defs>';
-  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="url(#g'+uid+')"/>';
-  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" filter="url(#f'+uid+')"/>';
+  h+='<defs>'
+    +'<linearGradient id="g'+uid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#445e3b"/><stop offset="0.5" stop-color="#384f30"/><stop offset="1" stop-color="#283a21"/></linearGradient>'
+    +'<filter id="h'+uid+'" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="5" seed="'+(11+segIdx)+'" result="n"/><feDiffuseLighting in="n" lighting-color="#ffffff" surfaceScale="5" diffuseConstant="1.15" result="lit"><feDistantLight azimuth="315" elevation="50"/></feDiffuseLighting><feComposite in="lit" in2="SourceGraphic" operator="arithmetic" k1="0.9" k2="0.12" k3="0" k4="0"/></filter>'
+    +'<filter id="t'+uid+'" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="'+(23+segIdx)+'" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0.5 0.05  0 0 0 0.5 0.11  0 0 0 0.5 0.03  0 0 0 0.45 0"/></filter>'
+    +'<pattern id="pf'+uid+'" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(7)"><rect width="28" height="28" fill="#b6ad62" opacity="0.5"/><rect x="0" y="0" width="14" height="14" fill="#9aa35a" opacity="0.7"/><rect x="14" y="14" width="14" height="14" fill="#c7bb75" opacity="0.7"/><rect x="14" y="0" width="14" height="14" fill="#a6ab5c" opacity="0.65"/></pattern>'
+    +'<pattern id="pd'+uid+'" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="1.7" fill="#142b11" opacity="0.85"/><circle cx="14" cy="11" r="1.5" fill="#0f240d" opacity="0.75"/><circle cx="9" cy="16" r="1.6" fill="#183416" opacity="0.8"/><circle cx="17" cy="3" r="1.3" fill="#1c3818" opacity="0.7"/></pattern>'
+    +'</defs>';
+  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="12" fill="url(#g'+uid+')" filter="url(#h'+uid+')"/>';
+  h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" filter="url(#t'+uid+')" opacity="0.5"/>';
   var cand=[0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5],lonStep=1,latStep=1;
   for(i=0;i<cand.length;i++){if((vLonMax-vLonMin)/cand[i]<=9){lonStep=cand[i];break;}}
   for(j=0;j<cand.length;j++){if((vLatMax-vLatMin)/cand[j]<=9){latStep=cand[j];break;}}
-  h+='<g stroke="#ffffff" stroke-opacity="0.13" stroke-width="1">';
+  h+='<g stroke="#ffffff" stroke-opacity="0.12" stroke-width="1">';
   for(var gx=Math.ceil(vLonMin/lonStep)*lonStep;gx<=vLonMax;gx+=lonStep){h+='<line x1="'+X(gx)+'" y1="0" x2="'+X(gx)+'" y2="'+H+'"/>';}
   for(var gy=Math.ceil(vLatMin/latStep)*latStep;gy<=vLatMax;gy+=latStep){h+='<line x1="0" y1="'+Y(gy)+'" x2="'+W+'" y2="'+Y(gy)+'"/>';}
   h+='</g>';
   var drawn=[];
+  if(m.geo&&m.geo.roads)(m.geo.roads||[]).forEach(function(rd){
+    var d7='',p7;
+    for(p7=0;p7<rd.path.length;p7++){d7+=(p7?'L':'M')+X(rd.path[p7][0])+' '+Y(rd.path[p7][1])+' ';}
+    h+='<path d="'+d7.trim()+'" fill="none" stroke="#ffffff" stroke-width="1.6" opacity="0.4" stroke-linecap="round"/>';
+  });
   if(m.geo&&m.geo.regions)(m.geo.regions||[]).forEach(function(rg){
     var d3='',p3;
     for(p3=0;p3<rg.path.length;p3++){d3+=(p3?'L':'M')+X(rg.path[p3][0])+' '+Y(rg.path[p3][1])+' ';}
-    h+='<path d="'+d3.trim()+' Z" fill="'+(rg.color||'#3f6b34')+'" opacity="'+(rg.op||0.55)+'"/>';
+    var dd=d3.trim()+' Z';
+    h+='<path d="'+dd+'" fill="'+(rg.color||'#3f6b34')+'" opacity="'+(rg.op||0.55)+'"/>';
+    if(rg.fields)h+='<path d="'+dd+'" fill="url(#pf'+uid+')"/>';
+    if(rg.dots)h+='<path d="'+dd+'" fill="url(#pd'+uid+')"/>';
     if(rg.label)h+='<text x="'+X(rg.lx||rg.path[0][0])+'" y="'+Y(rg.ly||rg.path[0][1])+'"'+(labStyle(rg.textColor||'#d6e8c4',(rg.size||13)))+'>'+rg.label+'</text>';
   });
   if(m.geo&&m.geo.lakes)(m.geo.lakes||[]).forEach(function(lk){
@@ -928,7 +982,7 @@ function mapSvg(segIdx,isTotal){
     drawn.push([x,y,lm.text]);
   });
   if(isTotal){
-    h+='<text x="16" y="30" font-size="15" font-weight="600" fill="#ffffff" paint-order="stroke" stroke="rgba(18,26,18,0.78)" stroke-width="2.6">'+(m.title||'全程路线图')+'</text>';
+    h+='<text x="16" y="30" font-size="15" font-weight="600" fill="#ffffff" paint-order="stroke" stroke="rgba(18,26,18,0.8)" stroke-width="2.6">'+(m.title||'全程路线图')+'</text>';
     h+='<text x="16" y="50" font-size="11.5" fill="#dde9d6" paint-order="stroke" stroke="rgba(18,26,18,0.7)" stroke-width="2">'+(m.sub||'示意图，非精确比例')+'</text>';
   }else if(segs[segIdx]){
     h+='<text x="16" y="28" font-size="14" font-weight="600" fill="'+segs[segIdx].color+'" paint-order="stroke" stroke="rgba(18,26,18,0.8)" stroke-width="3">'+segs[segIdx].label+' · '+segs[segIdx].km+'</text>';
@@ -1205,7 +1259,9 @@ function saveCloud(){
   if(cloudTimer){clearTimeout(cloudTimer);cloudTimer=null;}
   setSync('☁️ 同步中…');
   toast('☁️ 正在保存到云端...');
-  fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)})
+  gzipB64(JSON.stringify(state)).then(function(b64){
+    return fetch(CLOUD,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({__g:'1',d:b64})});
+  })
   .then(function(r){if(!r.ok)throw 0;markLm(r);setSync('✅ 已同步','ok');toast('✅ 已保存到云端，所有人打开网址即最新版');})
   .catch(function(){setSync('⚠️ 离线','err');toast('⚠️ 云端暂不可用，修改已保存在本地');});
 }
