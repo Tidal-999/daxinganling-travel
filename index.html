@@ -99,9 +99,11 @@
   .prog-pct{font-size:12px;color:var(--mut);font-weight:600;min-width:34px;text-align:right;}
   .budget-total b{font-size:15px;color:var(--red);}
   @media (max-width:430px){.day-head .theme{display:none;}}
-  .map-viewer{position:relative;overflow:hidden;border-radius:10px;background:#eef4ea;user-select:none;touch-action:none;}
+  .map-viewer{position:relative;overflow:hidden;border-radius:10px;background:#eef4ea;user-select:none;touch-action:pan-y;}
   .map-stage{transform-origin:0 0;will-change:transform;transition:transform .12s ease;}
   .map-viewer.zoomed .map-stage{transition:none;}
+  .map-viewer.zoomed{touch-action:none;}
+  .map-stage svg{display:block;width:100%;height:auto;max-height:54vh;}
   .zbar{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:3;}
   .zbtn{width:32px;height:32px;border-radius:50%;border:1px solid #c9d4c2;background:rgba(255,255,255,.94);color:#33403a;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.18);}
   .zbtn:active{background:#e6efe0;}
@@ -962,15 +964,16 @@ function bindViewer(v){
     v.classList.add('zoomed');apply();
   }
   v._z=z;v._setZoom=setZoom;
+  function grab(e){pts[e.pointerId]={x:e.clientX,y:e.clientY};}
   v.addEventListener('pointerdown',function(e){
     if(e.target.closest&&e.target.closest('.zbtn'))return;
-    pts[e.pointerId]={x:e.clientX,y:e.clientY};
-    try{v.setPointerCapture(e.pointerId);}catch(err){}
+    grab(e);
+    if(z.s>1){try{v.setPointerCapture(e.pointerId);}catch(err){}}
   });
   v.addEventListener('pointermove',function(e){
     if(!(e.pointerId in pts))return;
     var ids=Object.keys(pts);
-    if(ids.length===2){
+    if(ids.length>=2){
       var a=pts[ids[0]],b=pts[ids[1]];
       var d=Math.hypot(a.x-b.x,a.y-b.y);
       if(pinch0>0&&d>0){setZoom(z.s*d/pinch0);}
@@ -989,6 +992,11 @@ function bindViewer(v){
   v.addEventListener('pointercancel',endPt);
   v.addEventListener('pointerleave',endPt);
   v.addEventListener('wheel',function(e){e.preventDefault();setZoom(z.s+(e.deltaY<0?0.25:-0.25));},{passive:false});
+  v.addEventListener('dblclick',function(e){
+    var r=v.getBoundingClientRect();
+    if(z.s>1){setZoom(1);}
+    else{setZoom(2.5,e.clientX-r.left,e.clientY-r.top);}
+  });
 }
 function bindViewers(){
   document.querySelectorAll('.map-viewer').forEach(function(v){
