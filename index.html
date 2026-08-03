@@ -99,6 +99,12 @@
   .prog-pct{font-size:12px;color:var(--mut);font-weight:600;min-width:34px;text-align:right;}
   .budget-total b{font-size:15px;color:var(--red);}
   @media (max-width:430px){.day-head .theme{display:none;}}
+  .map-viewer{position:relative;overflow:hidden;border-radius:10px;background:#eef4ea;user-select:none;touch-action:none;}
+  .map-stage{transform-origin:0 0;will-change:transform;transition:transform .12s ease;}
+  .map-viewer.zoomed .map-stage{transition:none;}
+  .zbar{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:3;}
+  .zbtn{width:32px;height:32px;border-radius:50%;border:1px solid #c9d4c2;background:rgba(255,255,255,.94);color:#33403a;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.18);}
+  .zbtn:active{background:#e6efe0;}
   /* edit mode */
   .edit-note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
     padding:8px 12px;font-size:12px;margin-bottom:12px;}
@@ -230,6 +236,24 @@ var DEFAULT=
     "map": {
     "title": "7天总路线 · 全程约1800km",
     "sub": "按真实经纬度绘制（示意路线，非精确比例）",
+  "geo": {
+    "regions": [
+      { "path": [[119.6,50.9],[121.0,50.3],[122.7,50.7],[122.7,52.4],[120.7,52.5],[119.7,51.7],[119.5,51.1]], "label": "大兴安岭林区", "lx": 121.5, "ly": 51.7, "color": "#d9e8cf", "op": 0.75 },
+      { "path": [[116.8,47.6],[120.4,47.7],[120.9,49.6],[119.8,50.3],[117.1,50.0],[116.5,48.7]], "label": "呼伦贝尔草原", "lx": 118.3, "ly": 49.1, "color": "#e9edc9", "op": 0.8 }
+    ],
+    "lakes": [
+      { "path": [[117.25,48.70],[117.38,48.92],[117.44,49.03],[117.47,48.92],[117.42,48.72],[117.30,48.66]], "label": "呼伦湖", "lx": 117.10, "ly": 48.86 },
+      { "path": [[117.52,47.82],[117.62,47.94],[117.72,48.00],[117.70,47.90],[117.58,47.80]], "label": "贝尔湖", "lx": 117.46, "ly": 47.90 }
+    ],
+    "rivers": [
+      { "path": [[119.25,49.62],[119.55,49.42],[119.90,49.28],[120.25,49.22]], "label": "海拉尔河", "lx": 10, "ly": -8 }
+    ],
+    "landmarks": [
+      { "lon": 117.31, "lat": 49.62, "text": "满洲里口岸" },
+      { "lon": 119.90, "lat": 51.33, "text": "室韦口岸" },
+      { "lon": 119.36, "lat": 50.18, "text": "黑山头口岸" }
+    ]
+  },
     "points": {
       "海拉尔": [
         119.736,
@@ -818,6 +842,35 @@ function mapSvg(segIdx,isTotal){
   for(var gy=Math.ceil(vLatMin/latStep)*latStep;gy<=vLatMax;gy+=latStep){h+='<line x1="0" y1="'+Y(gy)+'" x2="'+W+'" y2="'+Y(gy)+'"/>';}
   h+='</g>';
   var drawn=[];
+  // 地形地貌区域
+  if(m.geo&&m.geo.regions)(m.geo.regions||[]).forEach(function(rg){
+    var d3='',p3;
+    for(p3=0;p3<rg.path.length;p3++){d3+=(p3?'L':'M')+X(rg.path[p3][0])+' '+Y(rg.path[p3][1])+' ';}
+    h+='<path d="'+d3.trim()+' Z" fill="'+(rg.color||'#dde8d3')+'" opacity="'+(rg.op||0.7)+'"/>';
+    if(rg.label)h+='<text x="'+X(rg.lx||rg.path[0][0])+'" y="'+Y(rg.ly||rg.path[0][1])+'" font-size="'+(rg.size||12)+'" fill="'+(rg.textColor||'#7a9168')+'">'+rg.label+'</text>';
+  });
+  // 湖泊
+  if(m.geo&&m.geo.lakes)(m.geo.lakes||[]).forEach(function(lk){
+    var d4='',p4;
+    for(p4=0;p4<lk.path.length;p4++){d4+=(p4?'L':'M')+X(lk.path[p4][0])+' '+Y(lk.path[p4][1])+' ';}
+    h+='<path d="'+d4.trim()+' Z" fill="#a9d4f0" opacity=".85"/>';
+    if(lk.label){
+      var lx2=lk.lx||lk.path[0][0],ly2=lk.ly||lk.path[0][1];
+      h+='<text x="'+X(lx2)+'" y="'+Y(ly2)+'" font-size="'+(lk.size||12)+'" fill="#3f7fae">'+lk.label+'</text>';
+      drawn.push([X(lx2),Y(ly2),lk.label]);
+    }
+  });
+  // 次要河流
+  if(m.geo&&m.geo.rivers)(m.geo.rivers||[]).forEach(function(rv){
+    var d5='',p5;
+    for(p5=0;p5<rv.path.length;p5++){d5+=(p5?'L':'M')+X(rv.path[p5][0])+' '+Y(rv.path[p5][1])+' ';}
+    h+='<path d="'+d5.trim()+'" fill="none" stroke="#8ec4ea" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>';
+    if(rv.label){
+      var mid=rv.path[Math.floor(rv.path.length/2)];
+      h+='<text x="'+(X(mid[0])+(rv.lx||10))+'" y="'+(Y(mid[1])+(rv.ly||-6))+'" font-size="11" fill="#5a9cc8">'+rv.label+'</text>';
+      drawn.push([X(mid[0])+(rv.lx||10),Y(mid[1])+(rv.ly||-6),rv.label]);
+    }
+  });
   if(m.deco&&m.deco.river&&m.deco.river.path){
     var rp=m.deco.river.path,d2='',i2;
     for(i2=0;i2<rp.length;i2++){d2+=(i2?'L':'M')+X(rp[i2][0])+' '+Y(rp[i2][1])+' ';}
@@ -856,6 +909,15 @@ function mapSvg(segIdx,isTotal){
   var sp=pts[startN],ep=pts[endN];
   if(sp&&startN!==endN)h+='<circle cx="'+X(sp[0])+'" cy="'+Y(sp[1])+'" r="11" fill="#16a34a" stroke="#fff" stroke-width="2.5"/><text x="'+X(sp[0])+'" y="'+(Y(sp[1])+4)+'" font-size="11" fill="#fff" text-anchor="middle">起</text>';
   if(ep)h+='<circle cx="'+X(ep[0])+'" cy="'+Y(ep[1])+'" r="11" fill="#dc2626" stroke="#fff" stroke-width="2.5"/><text x="'+X(ep[0])+'" y="'+(Y(ep[1])+4)+'" font-size="11" fill="#fff" text-anchor="middle">终</text>';
+  // 地标（不影响路线点标签，太近自动隐藏）
+  if(m.geo&&m.geo.landmarks)(m.geo.landmarks||[]).forEach(function(lm){
+    var x=X(lm.lon),y=Y(lm.lat),skip2=false,i3;
+    for(i3=0;i3<drawn.length;i3++){if(Math.abs(drawn[i3][0]-x)<30&&Math.abs(drawn[i3][1]-y)<15){skip2=true;break;}}
+    if(skip2)return;
+    h+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+(lm.color||'#b07b3f')+'"/>';
+    h+='<text x="'+(x+6)+'" y="'+(y+4)+'" font-size="10.5" fill="'+(lm.textColor||'#8a6a42')+'">'+lm.text+'</text>';
+    drawn.push([x,y,lm.text]);
+  });
   if(isTotal){
     h+='<text x="16" y="30" font-size="15" font-weight="600" fill="#2d3a2f">'+(m.title||'全程路线图')+'</text>';
     h+='<text x="16" y="50" font-size="11.5" fill="#5b6b5c">'+(m.sub||'示意图，非精确比例')+'</text>';
@@ -879,9 +941,59 @@ function mapSvg(segIdx,isTotal){
     h+='<line x1="'+(16+bl)+'" y1="'+(H-18)+'" x2="'+(16+bl)+'" y2="'+(H-6)+'" stroke="#5b6b5c" stroke-width="3"/>';
     h+='<text x="16" y="'+(H-21)+'" font-size="10.5" fill="#5b6b5c">'+km+' km</text>';
   }
-  h+='<g transform="translate('+(W-30)+',30)"><line x1="0" y1="0" x2="0" y2="-13" stroke="#2d3a2f" stroke-width="2"/><polygon points="0,-19 -4,-7 4,-7" fill="#2d3a2f"/><text x="0" y="10" font-size="10" fill="#2d3a2f" text-anchor="middle">北</text></g>';
+  h+='<g transform="translate('+(W-30)+','+(H-42)+')"><line x1="0" y1="0" x2="0" y2="-13" stroke="#2d3a2f" stroke-width="2"/><polygon points="0,-19 -4,-7 4,-7" fill="#2d3a2f"/><text x="0" y="10" font-size="10" fill="#2d3a2f" text-anchor="middle">北</text></g>';
   h+='</svg>';
   return h;
+}
+function mapViewerHtml(svg){
+  return '<div class="map-viewer"><div class="map-stage">'+svg+'</div><div class="zbar"><button class="zbtn" data-zact="in" title="放大">＋</button><button class="zbtn" data-zact="out" title="缩小">−</button><button class="zbtn" data-zact="reset" title="复位">⤢</button></div></div>';
+}
+function bindViewer(v){
+  var z={s:1,tx:0,ty:0},pts={},pinch0=0;
+  var stage=v.querySelector('.map-stage');
+  function apply(){stage.style.transform='translate('+z.tx+'px,'+z.ty+'px) scale('+z.s+')';}
+  function setZoom(ns,px,py){
+    var r=v.getBoundingClientRect();
+    ns=Math.max(1,Math.min(6,ns));
+    if(ns===1){z.s=1;z.tx=0;z.ty=0;apply();v.classList.remove('zoomed');return;}
+    if(px===undefined){px=r.width/2;py=r.height/2;}
+    var k=ns/z.s;
+    z.tx=px-(px-z.tx)*k;z.ty=py-(py-z.ty)*k;z.s=ns;
+    v.classList.add('zoomed');apply();
+  }
+  v._z=z;v._setZoom=setZoom;
+  v.addEventListener('pointerdown',function(e){
+    if(e.target.closest&&e.target.closest('.zbtn'))return;
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    try{v.setPointerCapture(e.pointerId);}catch(err){}
+  });
+  v.addEventListener('pointermove',function(e){
+    if(!(e.pointerId in pts))return;
+    var ids=Object.keys(pts);
+    if(ids.length===2){
+      var a=pts[ids[0]],b=pts[ids[1]];
+      var d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(pinch0>0&&d>0){setZoom(z.s*d/pinch0);}
+      pinch0=d;
+      return;
+    }
+    if(z.s>1){
+      z.tx+=e.clientX-pts[e.pointerId].x;
+      z.ty+=e.clientY-pts[e.pointerId].y;
+      apply();
+    }
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+  });
+  function endPt(e){delete pts[e.pointerId];pinch0=0;}
+  v.addEventListener('pointerup',endPt);
+  v.addEventListener('pointercancel',endPt);
+  v.addEventListener('pointerleave',endPt);
+  v.addEventListener('wheel',function(e){e.preventDefault();setZoom(z.s+(e.deltaY<0?0.25:-0.25));},{passive:false});
+}
+function bindViewers(){
+  document.querySelectorAll('.map-viewer').forEach(function(v){
+    if(v._bound)return;v._bound=true;bindViewer(v);
+  });
 }
 
 /* ---------- render ---------- */
@@ -895,6 +1007,7 @@ function render(){
   document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.tab===tab);});
   if(tab==='trip')renderTrip();else if(tab==='transport')renderTransport();
   else if(tab==='book')renderBook();else if(tab==='budget')renderBudget();else renderTips();
+  bindViewers();
 }
 
 function renderTrip(){
@@ -910,7 +1023,7 @@ function renderTrip(){
     +'<div class="card"><div class="n">'+countItems()+'</div><div class="l">个安排</div></div>'
     +'<div class="card"><div class="n">'+state.bookings.filter(function(b){return !b.done;}).length+'</div><div class="l">待办</div></div></div>';
   h+='<div class="progrow"><div class="progress"><div class="progress-bar" style="width:'+pct+'%"></div></div><span class="prog-pct">'+pct+'%</span></div>';
-  if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapSvg(0,true)+'<div class="note">'+(state.map.sub||'')+' · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
+  if(state.map&&state.map.segments)h+='<div class="card"><h3>🗺️ 7天总路线图</h3>'+mapViewerHtml(mapSvg(0,true))+'<div class="note">'+(state.map.sub||'')+' · 彩色分段为每日路线；点开每天卡片里的“当日路线图”看详情</div></div>';
   if(state.meta.alert)h+='<div class="urgent">'+state.meta.alert+'</div>';
   state.days.forEach(function(d,di){
     h+='<div class="day"><div class="day-head '+d.cls+'"><div><div class="dt">'+esc(d.name)+'</div><div class="ds">'+esc(d.date)+' · '+esc(d.tagline)+'</div></div>'
@@ -925,7 +1038,7 @@ function renderTrip(){
         +['d1','d2','d3','d4','d5','d6','d7'].map(function(c){return '<option value="'+c+'"'+(d.cls===c?' selected':'')+'>DAY'+(parseInt(c[1])||1)+' 配色</option>';}).join('')
         +'</select></div>';
     }
-    if(state.map&&state.map.segments[di])h+='<details class="map-drawer" open><summary>🗺️ 当日路线图 · '+esc(d.name)+'</summary>'+mapSvg(di,false)+'</details>';
+    if(state.map&&state.map.segments[di])h+='<details class="map-drawer" open><summary>🗺️ 当日路线图 · '+esc(d.name)+'</summary>'+mapViewerHtml(mapSvg(di,false))+'</details>';
     h+='<div class="tl">';
     d.items.forEach(function(it,ii){
       h+='<div class="item"><span class="dot t-'+it.cat+'"></span><div class="time">'+esc(it.time)+'</div><div>';
@@ -1163,7 +1276,7 @@ function wire(){
   });
 
   $id('main').addEventListener('click',function(e){
-    var t=e.target.closest('[data-act]');
+    var t=e.target.closest('[data-act],[data-zact]');
     if(!t)return;
     var act=t.dataset.act,di=+t.dataset.day,ii=+t.dataset.idx;
     if(act==='up')updown(di,ii,-1);
@@ -1173,6 +1286,7 @@ function wire(){
     else if(act==='delday'){if(confirm('删除这一天？'))delDay(di);}
     else if(act==='addday')addDay();
     else if(act==='daydone'){state.days[di].done=!state.days[di].done;save();render();}
+    else if(t.dataset.zact){var v=t.closest('.map-viewer');if(v&&v._z){var zz=v._z;if(t.dataset.zact==='in')v._setZoom(zz.s+0.5);else if(t.dataset.zact==='out')v._setZoom(zz.s-0.5);else v._setZoom(1);}}
     else if(act==='bk'){state.bookings[ii].done=t.checked;save();render();}
     else if(act==='bkurg'){state.bookings[ii].urgent=!state.bookings[ii].urgent;save();render();}
     else if(act==='bkdel'){state.bookings.splice(ii,1);save();render();}
