@@ -780,19 +780,19 @@ function cloudPush(){
   }
   tryPush();
 }
+var lastCloudToast=0;
 function cloudPull(force){
   return fetch(CLOUD,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;var lm=r.headers.get('Last-Modified');return r.json().then(function(d){return {d:d,lm:lm};});}).then(function(o){
     var d=o.d;if(!d||!d.meta||!d.days)throw 0;
     var ae=document.activeElement;if(!force&&ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
-    var stored=null;try{stored=localStorage.getItem('csl_lm_khingan');}catch(e){}
-    var mine=state.meta.syncAt||0,theirs=d.meta.syncAt||0;
-    if(force||(o.lm&&(!stored||o.lm>stored))||theirs>mine){
-      state=JSON.parse(JSON.stringify(d));
+    var cur=JSON.stringify(state),next=JSON.stringify(d);
+    if(o.lm){try{localStorage.setItem('csl_lm_khingan',o.lm);}catch(e){}}
+    if(cur!==next){
+      state=JSON.parse(next);
       if(!state.map)state.map=JSON.parse(JSON.stringify(DEFAULT.map));
       persist();
-      if(o.lm){try{localStorage.setItem('csl_lm_khingan',o.lm);}catch(e){}}
       render();
-      if(force)toast('✅ 已更新为云端最新版');
+      if(force||Date.now()-lastCloudToast>30000){lastCloudToast=Date.now();toast('☁️ 已更新为云端最新版');}
     }else if(force){toast('已是最新版本');}
     setSync('✅ 已同步','ok');
   }).catch(function(){setSync('⚠️ 离线','err');if(force)toast('⚠️ 云端暂时无法连接');});
@@ -1344,7 +1344,7 @@ function seedOnline(){
 }
 seedOnline();
 cloudPull();
-setInterval(cloudPull,60000);
+setInterval(cloudPull,20000);
 })();
 </script>
 </body>
